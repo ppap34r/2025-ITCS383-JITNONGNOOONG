@@ -6,8 +6,6 @@ The goal is to build a scalable food delivery platform (similar to Grab or Line 
 
 ---
 
----
-
 ## 1. User Roles (Actors)
 
 - **Customer:** Browses, orders food, pays, and rates the service.
