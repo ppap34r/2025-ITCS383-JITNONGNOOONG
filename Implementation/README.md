@@ -1,18 +1,11 @@
-# Food Delivery System (Frontend)
 
-This is a minimal React + Vite frontend scaffold for a Food Delivery System. It includes three portals: Customer, Restaurant, and Admin, and a mock JSON API using `json-server`.
+  # Scalable Food Delivery Platform
 
-Quick start (PowerShell):
+  This is a code bundle for Scalable Food Delivery Platform. The original project is available at https://www.figma.com/design/u5BcDOBY9j1awIYFvbYRaj/Scalable-Food-Delivery-Platform.
 
-```powershell
-cd "C:\Users\Admin\Desktop\Food Delivery System"
-npm install
-npm run start:mock    # starts mock API at http://localhost:4000
-npm run dev           # starts Vite dev server
-```
+  ## Running the code
 
-Notes:
-- The frontend expects the mock API at `http://localhost:4000`.
-- Use the Customer portal to browse restaurants and view menus.
-- Use the Restaurant portal to manage menu items (mocked with `json-server`).
-- Use the Admin portal to view simple revenue and discounts.
+  Run `npm i` to install the dependencies.
+
+  Run `npm run dev` to start the development server.
+  
