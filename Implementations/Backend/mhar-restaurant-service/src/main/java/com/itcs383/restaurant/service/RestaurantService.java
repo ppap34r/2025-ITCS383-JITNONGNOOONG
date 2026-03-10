@@ -3,6 +3,7 @@ package com.itcs383.restaurant.service;
 import com.itcs383.common.dto.MenuItemDTO;
 import com.itcs383.common.dto.RestaurantDTO;
 import com.itcs383.common.enums.RestaurantStatus;
+import com.itcs383.common.exception.ResourceNotFoundException;
 import com.itcs383.restaurant.dto.CreateMenuCategoryRequest;
 import com.itcs383.restaurant.dto.CreateMenuItemRequest;
 import com.itcs383.restaurant.dto.CreateRestaurantRequest;
@@ -29,6 +30,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +44,11 @@ import java.util.stream.Collectors;
 public class RestaurantService {
 
     private static final Logger logger = LoggerFactory.getLogger(RestaurantService.class);
+
+    // Error message constants
+    private static final String RESTAURANT_NOT_FOUND_MSG = "Restaurant not found with ID: ";
+    private static final String MENU_ITEM_NOT_FOUND_MSG = "Menu item not found with ID: ";
+    private static final String MENU_CATEGORY_NOT_FOUND_MSG = "Menu category not found with ID: ";
 
     @Autowired
     private RestaurantRepository restaurantRepository;
@@ -105,7 +112,7 @@ public class RestaurantService {
         logger.debug("Fetching restaurant with ID: {}", id);
         
         Restaurant restaurant = restaurantRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Restaurant not found with ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", id));
         
         return convertToRestaurantDTO(restaurant);
     }
@@ -207,7 +214,7 @@ public class RestaurantService {
         logger.info("Updating restaurant with ID: {}", id);
 
         Restaurant restaurant = restaurantRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Restaurant not found with ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", id));
 
         validateRestaurantRequest(request);
 
@@ -242,7 +249,7 @@ public class RestaurantService {
         logger.info("Updating restaurant {} status to: {}", id, status);
 
         Restaurant restaurant = restaurantRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Restaurant not found with ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", id));
 
         restaurant.setStatus(status);
         
@@ -267,7 +274,7 @@ public class RestaurantService {
         logger.info("Toggling restaurant {} availability to: {}", id, acceptsOrders);
 
         Restaurant restaurant = restaurantRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Restaurant not found with ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", id));
 
         restaurant.setAcceptsOrders(acceptsOrders);
         Restaurant savedRestaurant = restaurantRepository.save(restaurant);
@@ -285,7 +292,7 @@ public class RestaurantService {
         logger.info("Adding menu item '{}' to restaurant {}", request.getName(), restaurantId);
 
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RuntimeException("Restaurant not found with ID: " + restaurantId));
+            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", restaurantId));
 
         // Validate menu item limit
         long currentItems = menuItemRepository.countByRestaurantIdAndIsAvailableTrue(restaurantId);
@@ -306,16 +313,16 @@ public class RestaurantService {
         if (request.getImageUrl() != null) menuItem.setImageUrl(request.getImageUrl());
         if (request.getCategoryId() != null) {
             MenuCategory category = menuCategoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found with ID: " + request.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException("MenuCategory", request.getCategoryId()));
             menuItem.setCategory(category);
         }
 
-        menuItem.setIsAvailable(request.getIsAvailable() != null ? request.getIsAvailable() : true);
-        menuItem.setIsFeatured(request.getIsFeatured() != null ? request.getIsFeatured() : false);
-        menuItem.setIsVegetarian(request.getIsVegetarian() != null ? request.getIsVegetarian() : false);
-        menuItem.setIsVegan(request.getIsVegan() != null ? request.getIsVegan() : false);
-        menuItem.setIsGlutenFree(request.getIsGlutenFree() != null ? request.getIsGlutenFree() : false);
-        menuItem.setIsSpicy(request.getIsSpicy() != null ? request.getIsSpicy() : false);
+        menuItem.setIsAvailable(Optional.ofNullable(request.getIsAvailable()).orElse(Boolean.TRUE));
+        menuItem.setIsFeatured(Optional.ofNullable(request.getIsFeatured()).orElse(Boolean.FALSE));
+        menuItem.setIsVegetarian(Optional.ofNullable(request.getIsVegetarian()).orElse(Boolean.FALSE));
+        menuItem.setIsVegan(Optional.ofNullable(request.getIsVegan()).orElse(Boolean.FALSE));
+        menuItem.setIsGlutenFree(Optional.ofNullable(request.getIsGlutenFree()).orElse(Boolean.FALSE));
+        menuItem.setIsSpicy(Optional.ofNullable(request.getIsSpicy()).orElse(Boolean.FALSE));
         menuItem.setPreparationTime(request.getPreparationTime() != null ? request.getPreparationTime() : 15);
         menuItem.setCalories(request.getCalories());
         menuItem.setIngredients(request.getIngredients());
@@ -390,7 +397,7 @@ public class RestaurantService {
         logger.info("Adding category '{}' to restaurant {}", request.getName(), restaurantId);
 
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new RuntimeException("Restaurant not found with ID: " + restaurantId));
+            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", restaurantId));
 
         // Check for duplicate category name
         if (menuCategoryRepository.existsByNameAndRestaurantId(request.getName(), restaurantId)) {

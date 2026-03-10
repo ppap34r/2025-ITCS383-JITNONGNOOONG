@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.itcs383.common.dto.OrderDTO;
 import com.itcs383.common.enums.OrderStatus;
+import com.itcs383.common.exception.OrderStatusException;
+import com.itcs383.common.exception.OrderValidationException;
+import com.itcs383.common.exception.ResourceNotFoundException;
 import com.itcs383.order.dto.CreateOrderRequest;
 import com.itcs383.order.dto.UpdateOrderStatusRequest;
 import com.itcs383.order.entity.Order;
@@ -110,7 +113,7 @@ public class OrderService {
         } catch (Exception e) {
             logger.error("Unexpected error creating order for customer {}: {}", 
                         request.getCustomerId(), e.getMessage(), e);
-            throw new RuntimeException("Failed to create order: " + e.getMessage(), e);
+            throw new OrderValidationException("Failed to create order: " + e.getMessage(), e);
         }
     }
 
@@ -123,7 +126,7 @@ public class OrderService {
         logger.debug("Fetching order by ID: {}", orderId);
         
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+            .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
         
         return convertToDTO(order);
     }
@@ -137,7 +140,7 @@ public class OrderService {
         logger.debug("Fetching order by number: {}", orderNumber);
         
         Order order = orderRepository.findByOrderNumber(orderNumber)
-            .orElseThrow(() -> new RuntimeException("Order not found: " + orderNumber));
+            .orElseThrow(() -> new ResourceNotFoundException("Order", orderNumber));
         
         return convertToDTO(order);
     }
@@ -153,13 +156,11 @@ public class OrderService {
 
         try {
             Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
 
             // Validate status transition
             if (!order.canUpdateStatus(request.getNewStatus())) {
-                throw new IllegalStateException(
-                    String.format("Cannot update order status from %s to %s", 
-                                 order.getStatus(), request.getNewStatus()));
+                throw new OrderStatusException(order.getStatus(), request.getNewStatus());
             }
 
             // Update status with history tracking
@@ -175,7 +176,7 @@ public class OrderService {
             logger.info("Order {} status updated to {}", orderId, request.getNewStatus());
             return convertToDTO(updatedOrder);
 
-        } catch (IllegalStateException e) {
+        } catch (OrderStatusException e) {
             logger.error("Invalid status transition for order {}: {}", orderId, e.getMessage());
             throw e;
         } catch (RuntimeException e) {
@@ -183,7 +184,7 @@ public class OrderService {
             throw e;
         } catch (Exception e) {
             logger.error("Unexpected error updating order {} status: {}", orderId, e.getMessage(), e);
-            throw new RuntimeException("Failed to update order status: " + e.getMessage(), e);
+            throw new OrderStatusException("Failed to update order status: " + e.getMessage());
         }
     }
 
@@ -242,7 +243,7 @@ public class OrderService {
         logger.info("Cancelling order {} by user {}", orderId, userId);
 
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+            .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
 
         // Validate cancellation
         if (!canCancelOrder(order)) {

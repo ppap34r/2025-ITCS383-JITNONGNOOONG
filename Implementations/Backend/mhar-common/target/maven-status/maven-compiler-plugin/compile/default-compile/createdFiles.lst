@@ -1,5 +1,8 @@
+com/itcs383/common/exception/OrderStatusException.class
 com/itcs383/common/dto/MenuItemDTO.class
 com/itcs383/common/dto/RestaurantDTO$Builder.class
+com/itcs383/common/exception/OrderValidationException.class
+com/itcs383/common/exception/ResourceNotFoundException.class
 com/itcs383/common/dto/RestaurantDTO.class
 com/itcs383/common/dto/ApiResponse.class
 com/itcs383/common/enums/RestaurantStatus.class
