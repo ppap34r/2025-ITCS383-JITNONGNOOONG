@@ -56,10 +56,10 @@ public class Order {
     @Column(name = "delivery_address", nullable = false, columnDefinition = "TEXT")
     private String deliveryAddress;
 
-    @Column(name = "delivery_latitude", precision = 10, scale = 8)
+    @Column(name = "delivery_latitude")
     private Double deliveryLatitude;
 
-    @Column(name = "delivery_longitude", precision = 11, scale = 8)
+    @Column(name = "delivery_longitude")
     private Double deliveryLongitude;
 
     @Column(name = "special_instructions", columnDefinition = "TEXT")

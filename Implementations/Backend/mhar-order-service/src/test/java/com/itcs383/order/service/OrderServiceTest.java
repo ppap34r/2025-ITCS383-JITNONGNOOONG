@@ -28,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.itcs383.common.dto.OrderDTO;
 import com.itcs383.common.enums.OrderStatus;
+import com.itcs383.common.exception.OrderStatusException;
 import com.itcs383.order.dto.CreateOrderRequest;
 import com.itcs383.order.dto.UpdateOrderStatusRequest;
 import com.itcs383.order.entity.Order;
@@ -188,10 +189,10 @@ class OrderServiceTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(completedOrder));
 
         // When & Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, 
+        OrderStatusException exception = assertThrows(OrderStatusException.class, 
             () -> orderService.updateOrderStatus(orderId, updateRequest));
         
-        assertTrue(exception.getMessage().contains("Cannot update order status"));
+        assertTrue(exception.getMessage().contains("Cannot transition order"));
         verify(orderRepository).findById(orderId);
         verify(orderRepository, never()).save(any(Order.class));
     }

@@ -12,12 +12,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureDataJpa;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,6 +39,8 @@ import com.itcs383.order.service.OrderService;
  * Tests REST API endpoints, request/response handling, and validation
  */
 @WebMvcTest(OrderController.class)
+@AutoConfigureDataJpa
+@ActiveProfiles("test")
 class OrderControllerTest {
 
     @Autowired
@@ -65,7 +69,7 @@ class OrderControllerTest {
         when(orderService.createOrder(any(CreateOrderRequest.class))).thenReturn(validOrderDTO);
 
         // When & Then
-        mockMvc.perform(post("/api/v1/orders")
+        mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validCreateRequest)))
                 .andExpect(status().isCreated())
@@ -85,7 +89,7 @@ class OrderControllerTest {
         // Missing required fields
 
         // When & Then
-        mockMvc.perform(post("/api/v1/orders")
+        mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -100,7 +104,7 @@ class OrderControllerTest {
         when(orderService.getOrder(orderId)).thenReturn(validOrderDTO);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/orders/{id}", orderId))
+        mockMvc.perform(get("/orders/{id}", orderId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(validOrderDTO.getId()))
@@ -116,7 +120,7 @@ class OrderControllerTest {
         when(orderService.getOrder(orderId)).thenThrow(new RuntimeException("Order not found"));
 
         // When & Then
-        mockMvc.perform(get("/api/v1/orders/{id}", orderId))
+        mockMvc.perform(get("/orders/{id}", orderId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error").exists());
@@ -131,7 +135,7 @@ class OrderControllerTest {
         when(orderService.getOrderByNumber(orderNumber)).thenReturn(validOrderDTO);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/orders/number/{orderNumber}", orderNumber))
+        mockMvc.perform(get("/orders/number/{orderNumber}", orderNumber))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.orderNumber").value(orderNumber));
@@ -150,7 +154,7 @@ class OrderControllerTest {
             .thenReturn(updatedOrder);
 
         // When & Then
-        mockMvc.perform(put("/api/v1/orders/{id}/status", orderId)
+        mockMvc.perform(put("/orders/{id}/status", orderId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validUpdateRequest)))
                 .andExpect(status().isOk())
@@ -174,7 +178,7 @@ class OrderControllerTest {
             .thenReturn(orderPage);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/orders/customer/{customerId}", customerId)
+        mockMvc.perform(get("/orders/customer/{customerId}", customerId)
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isOk())
@@ -200,7 +204,7 @@ class OrderControllerTest {
             .thenReturn(orderPage);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/orders/customer/{customerId}/status/{status}", customerId, status)
+        mockMvc.perform(get("/orders/customer/{customerId}/status/{status}", customerId, status)
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isOk())
@@ -224,7 +228,7 @@ class OrderControllerTest {
             .thenReturn(orderPage);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/orders/restaurant/{restaurantId}", restaurantId)
+        mockMvc.perform(get("/orders/restaurant/{restaurantId}", restaurantId)
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isOk())
@@ -245,7 +249,7 @@ class OrderControllerTest {
             .thenReturn(cancelledOrder);
 
         // When & Then
-        mockMvc.perform(put("/api/v1/orders/{id}/cancel", orderId)
+        mockMvc.perform(put("/orders/{id}/cancel", orderId)
                 .param("userId", "2")
                 .param("reason", "Customer requested"))
                 .andExpect(status().isOk())
@@ -262,7 +266,7 @@ class OrderControllerTest {
             .thenThrow(new RuntimeException("Database connection failed"));
 
         // When & Then
-        mockMvc.perform(post("/api/v1/orders")
+        mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validCreateRequest)))
                 .andExpect(status().isInternalServerError())
@@ -280,7 +284,7 @@ class OrderControllerTest {
             .thenThrow(new IllegalStateException("Invalid status transition"));
 
         // When & Then
-        mockMvc.perform(put("/api/v1/orders/{id}/status", orderId)
+        mockMvc.perform(put("/orders/{id}/status", orderId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validUpdateRequest)))
                 .andExpect(status().isBadRequest())

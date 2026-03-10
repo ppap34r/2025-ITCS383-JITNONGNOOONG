@@ -1,0 +1,51 @@
+-------------------------------------------------------------------------------
+Test set: com.itcs383.order.integration.OrderServiceIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 1, Errors: 2, Skipped: 0, Time elapsed: 5.124 s <<< FAILURE! -- in com.itcs383.order.integration.OrderServiceIntegrationTest
+com.itcs383.order.integration.OrderServiceIntegrationTest.orderCancellation_WithValidConditions_ShouldSucceed -- Time elapsed: 0.055 s <<< ERROR!
+java.lang.IllegalArgumentException: Null key returned for cache operation [Builder[public com.itcs383.common.dto.OrderDTO com.itcs383.order.service.OrderService.cancelOrder(java.lang.Long,java.lang.Long,java.lang.String)] caches=[orders] | key='#orderId' | keyGenerator='' | cacheManager='' | cacheResolver='' | condition='',false,false]. If you are using named parameters, ensure that the compiler uses the '-parameters' flag.
+	at org.springframework.cache.interceptor.CacheAspectSupport.generateKey(CacheAspectSupport.java:708)
+	at org.springframework.cache.interceptor.CacheAspectSupport.performCacheEvicts(CacheAspectSupport.java:659)
+	at org.springframework.cache.interceptor.CacheAspectSupport.processCacheEvicts(CacheAspectSupport.java:643)
+	at org.springframework.cache.interceptor.CacheAspectSupport.evaluate(CacheAspectSupport.java:567)
+	at org.springframework.cache.interceptor.CacheAspectSupport.execute(CacheAspectSupport.java:433)
+	at org.springframework.cache.interceptor.CacheAspectSupport.execute(CacheAspectSupport.java:395)
+	at org.springframework.cache.interceptor.CacheInterceptor.invoke(CacheInterceptor.java:74)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:717)
+	at com.itcs383.order.service.OrderService$$SpringCGLIB$$0.cancelOrder(<generated>)
+	at com.itcs383.order.integration.OrderServiceIntegrationTest.orderCancellation_WithValidConditions_ShouldSucceed(OrderServiceIntegrationTest.java:132)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.itcs383.order.integration.OrderServiceIntegrationTest.deliveryFeeCalculation_ShouldBeCorrect -- Time elapsed: 0.013 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <35.00> but was: <0>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:177)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1145)
+	at com.itcs383.order.integration.OrderServiceIntegrationTest.deliveryFeeCalculation_ShouldBeCorrect(OrderServiceIntegrationTest.java:178)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.itcs383.order.integration.OrderServiceIntegrationTest.completeOrderLifecycle_ShouldWorkEndToEnd -- Time elapsed: 0.013 s <<< ERROR!
+java.lang.IllegalArgumentException: Null key returned for cache operation [Builder[public com.itcs383.common.dto.OrderDTO com.itcs383.order.service.OrderService.getOrder(java.lang.Long)] caches=[orders] | key='#orderId' | keyGenerator='' | cacheManager='' | cacheResolver='' | condition='' | unless='' | sync='false']. If you are using named parameters, ensure that the compiler uses the '-parameters' flag.
+	at org.springframework.cache.interceptor.CacheAspectSupport.generateKey(CacheAspectSupport.java:708)
+	at org.springframework.cache.interceptor.CacheAspectSupport.findCachedValue(CacheAspectSupport.java:480)
+	at org.springframework.cache.interceptor.CacheAspectSupport.execute(CacheAspectSupport.java:431)
+	at org.springframework.cache.interceptor.CacheAspectSupport.execute(CacheAspectSupport.java:395)
+	at org.springframework.cache.interceptor.CacheInterceptor.invoke(CacheInterceptor.java:74)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:717)
+	at com.itcs383.order.service.OrderService$$SpringCGLIB$$0.getOrder(<generated>)
+	at com.itcs383.order.integration.OrderServiceIntegrationTest.completeOrderLifecycle_ShouldWorkEndToEnd(OrderServiceIntegrationTest.java:63)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
