@@ -347,16 +347,4 @@ class OrderServiceTest {
         order.getOrderItems().add(item);
         return order;
     }
-
-    private OrderDTO createValidOrderDTO() {
-        return new OrderDTO(
-            1L,
-            "MR12345678ABCD1234",
-            1L,
-            1L,
-            OrderStatus.PENDING.name(),
-            new BigDecimal("275.00"),
-            "123 Test Street, Bangkok, Thailand"
-        );
-    }
 }

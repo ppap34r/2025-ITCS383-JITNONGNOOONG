@@ -49,6 +49,23 @@ import jakarta.validation.Valid;
 public class OrderController {
 
     private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
+    
+    // Constants for response keys
+    private static final String KEY_SUCCESS = "success";
+    private static final String KEY_MESSAGE = "message";
+    private static final String KEY_DATA = "data";
+    
+    // Constants for log messages
+    private static final String LOG_ORDER_NOT_FOUND = "Order not found: {}";
+    private static final String MSG_ORDER_CREATED = "Order created successfully";
+    private static final String MSG_ORDER_UPDATED = "Order status updated successfully";
+    private static final String MSG_ORDER_CANCELLED = "Order cancelled successfully";
+    private static final String MSG_FAILED_CREATE = "Failed to create order";
+    private static final String MSG_FAILED_FETCH = "Failed to fetch order";
+    private static final String MSG_FAILED_UPDATE = "Failed to update order status";
+    private static final String MSG_FAILED_CANCEL = "Failed to cancel order";
+    private static final String MSG_FAILED_FETCH_ORDERS = "Failed to fetch orders";
+    private static final String MSG_INVALID_STATUS = "Invalid status: ";
 
     private final OrderService orderService;
 
@@ -62,7 +79,7 @@ public class OrderController {
      * POST /orders
      */
     @PostMapping
-    public ResponseEntity<?> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+    public ResponseEntity<Map<String, Object>> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         logger.info("Creating order for customer {} at restaurant {}", 
                    request.getCustomerId(), request.getRestaurantId());
         
@@ -71,23 +88,23 @@ public class OrderController {
             
             logger.info("Order created successfully: {}", order.getOrderNumber());
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "success", true,
-                "message", "Order created successfully",
-                "data", order
+                KEY_SUCCESS, true,
+                KEY_MESSAGE, MSG_ORDER_CREATED,
+                KEY_DATA, order
             ));
             
         } catch (IllegalArgumentException e) {
             logger.warn("Invalid order request: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, e.getMessage()
             ));
             
         } catch (Exception e) {
             logger.error("Failed to create order: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to create order"
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, MSG_FAILED_CREATE
             ));
         }
     }
@@ -97,26 +114,26 @@ public class OrderController {
      * GET /orders/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<?> getOrder(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> getOrder(@PathVariable Long id) {
         logger.debug("Fetching order by ID: {}", id);
         
         try {
             OrderDTO order = orderService.getOrder(id);
             
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", order
+                KEY_SUCCESS, true,
+                KEY_DATA, order
             ));
             
         } catch (RuntimeException e) {
-            logger.warn("Order not found: {}", id);
+            logger.warn(LOG_ORDER_NOT_FOUND, id);
             return ResponseEntity.notFound().build();
             
         } catch (Exception e) {
             logger.error("Failed to fetch order {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to fetch order"
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, MSG_FAILED_FETCH
             ));
         }
     }
@@ -126,26 +143,26 @@ public class OrderController {
      * GET /orders/number/{orderNumber}
      */
     @GetMapping("/number/{orderNumber}")
-    public ResponseEntity<?> getOrderByNumber(@PathVariable String orderNumber) {
+    public ResponseEntity<Map<String, Object>> getOrderByNumber(@PathVariable String orderNumber) {
         logger.debug("Fetching order by number: {}", orderNumber);
         
         try {
             OrderDTO order = orderService.getOrderByNumber(orderNumber);
             
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", order
+                KEY_SUCCESS, true,
+                KEY_DATA, order
             ));
             
         } catch (RuntimeException e) {
-            logger.warn("Order not found: {}", orderNumber);
+            logger.warn(LOG_ORDER_NOT_FOUND, orderNumber);
             return ResponseEntity.notFound().build();
             
         } catch (Exception e) {
             logger.error("Failed to fetch order {}: {}", orderNumber, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to fetch order"
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, MSG_FAILED_FETCH
             ));
         }
     }
@@ -155,7 +172,7 @@ public class OrderController {
      * PUT /orders/{id}/status
      */
     @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id,
+    public ResponseEntity<Map<String, Object>> updateOrderStatus(@PathVariable Long id,
                                               @Valid @RequestBody UpdateOrderStatusRequest request) {
         logger.info("Updating order {} status to {} by user {}", 
                    id, request.getNewStatus(), request.getUpdatedBy());
@@ -164,27 +181,27 @@ public class OrderController {
             OrderDTO order = orderService.updateOrderStatus(id, request);
             
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Order status updated successfully",
-                "data", order
+                KEY_SUCCESS, true,
+                KEY_MESSAGE, MSG_ORDER_UPDATED,
+                KEY_DATA, order
             ));
             
         } catch (IllegalStateException e) {
             logger.warn("Invalid status transition for order {}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, e.getMessage()
             ));
             
         } catch (RuntimeException e) {
-            logger.warn("Order not found: {}", id);
+            logger.warn(LOG_ORDER_NOT_FOUND, id);
             return ResponseEntity.notFound().build();
             
         } catch (Exception e) {
             logger.error("Failed to update order {} status: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to update order status"
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, MSG_FAILED_UPDATE
             ));
         }
     }
@@ -194,7 +211,7 @@ public class OrderController {
      * DELETE /orders/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> cancelOrder(@PathVariable Long id,
+    public ResponseEntity<Map<String, Object>> cancelOrder(@PathVariable Long id,
                                         @RequestParam Long userId,
                                         @RequestParam(required = false, defaultValue = "Cancelled by user") String reason) {
         logger.info("Cancelling order {} by user {}", id, userId);
@@ -203,27 +220,27 @@ public class OrderController {
             OrderDTO order = orderService.cancelOrder(id, userId, reason);
             
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Order cancelled successfully",
-                "data", order
+                KEY_SUCCESS, true,
+                KEY_MESSAGE, MSG_ORDER_CANCELLED,
+                KEY_DATA, order
             ));
             
         } catch (IllegalStateException e) {
             logger.warn("Cannot cancel order {}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, e.getMessage()
             ));
             
         } catch (RuntimeException e) {
-            logger.warn("Order not found: {}", id);
+            logger.warn(LOG_ORDER_NOT_FOUND, id);
             return ResponseEntity.notFound().build();
             
         } catch (Exception e) {
             logger.error("Failed to cancel order {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to cancel order"
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, MSG_FAILED_CANCEL
             ));
         }
     }
@@ -233,7 +250,7 @@ public class OrderController {
      * GET /orders/customer/{customerId}
      */
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<?> getCustomerOrders(@PathVariable Long customerId,
+    public ResponseEntity<Map<String, Object>> getCustomerOrders(@PathVariable Long customerId,
                                               @RequestParam(defaultValue = "0") int page,
                                               @RequestParam(defaultValue = "20") int size,
                                               @RequestParam(required = false) String status) {
@@ -252,8 +269,8 @@ public class OrderController {
             }
             
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", orders.getContent(),
+                KEY_SUCCESS, true,
+                KEY_DATA, orders.getContent(),
                 "pagination", Map.of(
                     "page", orders.getNumber(),
                     "size", orders.getSize(),
@@ -267,15 +284,15 @@ public class OrderController {
         } catch (IllegalArgumentException e) {
             logger.warn("Invalid status parameter: {}", status);
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Invalid status: " + status
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, MSG_INVALID_STATUS + status
             ));
             
         } catch (Exception e) {
             logger.error("Failed to fetch customer {} orders: {}", customerId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to fetch orders"
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, MSG_FAILED_FETCH_ORDERS
             ));
         }
     }
@@ -285,7 +302,7 @@ public class OrderController {
      * GET /orders/restaurant/{restaurantId}
      */
     @GetMapping("/restaurant/{restaurantId}")
-    public ResponseEntity<?> getRestaurantOrders(@PathVariable Long restaurantId,
+    public ResponseEntity<Map<String, Object>> getRestaurantOrders(@PathVariable Long restaurantId,
                                                 @RequestParam(defaultValue = "0") int page,
                                                 @RequestParam(defaultValue = "20") int size,
                                                 @RequestParam(required = false) String status) {
@@ -304,8 +321,8 @@ public class OrderController {
             }
             
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", orders.getContent(),
+                KEY_SUCCESS, true,
+                KEY_DATA, orders.getContent(),
                 "pagination", Map.of(
                     "page", orders.getNumber(),
                     "size", orders.getSize(),
@@ -319,15 +336,15 @@ public class OrderController {
         } catch (IllegalArgumentException e) {
             logger.warn("Invalid status parameter: {}", status);
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Invalid status: " + status
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, MSG_INVALID_STATUS + status
             ));
             
         } catch (Exception e) {
             logger.error("Failed to fetch restaurant {} orders: {}", restaurantId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to fetch orders"
+                KEY_SUCCESS, false,
+                KEY_MESSAGE, MSG_FAILED_FETCH_ORDERS
             ));
         }
     }
@@ -337,7 +354,7 @@ public class OrderController {
      * GET /orders/health
      */
     @GetMapping("/health")
-    public ResponseEntity<?> health() {
+    public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(Map.of(
             "status", "UP",
             "service", "Order Service",

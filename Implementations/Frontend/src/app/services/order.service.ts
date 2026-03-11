@@ -1,0 +1,280 @@
+/**
+ * Order Service
+ * 
+ * Handles all order-related API calls:
+ * - Creating orders
+ * - Fetching order details
+ * - Updating order status
+ * - Cancelling orders
+ */
+
+import apiClient, { ApiResponse, PaginatedResponse, handleApiError } from './apiClient';
+import { API_ENDPOINTS } from '../config/api.config';
+
+/**
+ * Order Type Definitions
+ */
+export interface Order {
+  id: string;
+  orderNumber: string;
+  customerId: string;
+  restaurantId: string;
+  riderId?: string;
+  deliveryAddress: OrderAddress;
+  items: OrderItem[];
+  subtotal: number;
+  discount: number;
+  platformFee: number;
+  deliveryFee: number;
+  total: number;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  createdAt: string;
+  updatedAt: string;
+  estimatedDelivery?: string;
+  actualDelivery?: string;
+  promotionCode?: string;
+}
+
+export interface OrderAddress {
+  street: string;
+  city: string;
+  postalCode: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface OrderItem {
+  id: string;
+  orderId: string;
+  menuItemId: string;
+  menuItemName: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  specialInstructions?: string;
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  PREPARING = 'PREPARING',
+  READY_FOR_PICKUP = 'READY_FOR_PICKUP',
+  PICKED_UP = 'PICKED_UP',
+  DELIVERING = 'DELIVERING',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum PaymentMethod {
+  CREDIT_CARD = 'CREDIT_CARD',
+  BANK_TRANSFER_QR = 'BANK_TRANSFER_QR',
+  PROMPTPAY = 'PROMPTPAY',
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+}
+
+export interface CreateOrderRequest {
+  customerId: string;
+  restaurantId: string;
+  deliveryAddress: OrderAddress;
+  items: CreateOrderItem[];
+  paymentMethod: PaymentMethod;
+  promotionCode?: string;
+  specialInstructions?: string;
+}
+
+export interface CreateOrderItem {
+  menuItemId: string;
+  quantity: number;
+  specialInstructions?: string;
+}
+
+export interface UpdateOrderStatusRequest {
+  newStatus: OrderStatus;
+  updatedBy: string;
+  notes?: string;
+}
+
+/**
+ * Order Service Class
+ */
+class OrderService {
+  /**
+   * Create new order
+   */
+  async createOrder(orderData: CreateOrderRequest): Promise<Order> {
+    try {
+      const response = await apiClient.post<ApiResponse<Order>>(
+        API_ENDPOINTS.ORDERS.BASE,
+        orderData
+      );
+      
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to create order:', handleApiError(error));
+      throw error;
+    }
+  }
+
+  /**
+   * Get order by ID
+   */
+  async getOrderById(id: string): Promise<Order> {
+    try {
+      const response = await apiClient.get<ApiResponse<Order>>(
+        API_ENDPOINTS.ORDERS.BY_ID(id)
+      );
+      
+      return response.data.data;
+    } catch (error) {
+      console.error(`Failed to fetch order ${id}:`, handleApiError(error));
+      throw error;
+    }
+  }
+
+  /**
+   * Get order by order number
+   */
+  async getOrderByNumber(orderNumber: string): Promise<Order> {
+    try {
+      const response = await apiClient.get<ApiResponse<Order>>(
+        API_ENDPOINTS.ORDERS.BY_NUMBER(orderNumber)
+      );
+      
+      return response.data.data;
+    } catch (error) {
+      console.error(`Failed to fetch order ${orderNumber}:`, handleApiError(error));
+      throw error;
+    }
+  }
+
+  /**
+   * Get customer orders
+   */
+  async getCustomerOrders(
+    customerId: string,
+    page: number = 0,
+    size: number = 20,
+    status?: OrderStatus
+  ): Promise<PaginatedResponse<Order>> {
+    try {
+      const response = await apiClient.get<ApiResponse<PaginatedResponse<Order>>>(
+        API_ENDPOINTS.ORDERS.CUSTOMER(customerId),
+        {
+          params: { page, size, status },
+        }
+      );
+      
+      return response.data.data;
+    } catch (error) {
+      console.error(`Failed to fetch orders for customer ${customerId}:`, handleApiError(error));
+      throw error;
+    }
+  }
+
+  /**
+   * Get restaurant orders
+   */
+  async getRestaurantOrders(
+    restaurantId: string,
+    page: number = 0,
+    size: number = 20,
+    status?: OrderStatus
+  ): Promise<PaginatedResponse<Order>> {
+    try {
+      const response = await apiClient.get<ApiResponse<PaginatedResponse<Order>>>(
+        API_ENDPOINTS.ORDERS.RESTAURANT(restaurantId),
+        {
+          params: { page, size, status },
+        }
+      );
+      
+      return response.data.data;
+    } catch (error) {
+      console.error(`Failed to fetch orders for restaurant ${restaurantId}:`, handleApiError(error));
+      throw error;
+    }
+  }
+
+  /**
+   * Update order status
+   */
+  async updateOrderStatus(
+    orderId: string,
+    statusData: UpdateOrderStatusRequest
+  ): Promise<Order> {
+    try {
+      const response = await apiClient.put<ApiResponse<Order>>(
+        API_ENDPOINTS.ORDERS.STATUS(orderId),
+        statusData
+      );
+      
+      return response.data.data;
+    } catch (error) {
+      console.error(`Failed to update order ${orderId} status:`, handleApiError(error));
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel order
+   */
+  async cancelOrder(orderId: string, userId: string, reason?: string): Promise<void> {
+    try {
+      await apiClient.delete(API_ENDPOINTS.ORDERS.CANCEL(orderId), {
+        params: { userId, reason },
+      });
+    } catch (error) {
+      console.error(`Failed to cancel order ${orderId}:`, handleApiError(error));
+      throw error;
+    }
+  }
+
+  /**
+   * Get readable status text
+   */
+  getStatusText(status: OrderStatus): string {
+    const statusMap: Record<OrderStatus, string> = {
+      [OrderStatus.PENDING]: 'Pending',
+      [OrderStatus.CONFIRMED]: 'Confirmed',
+      [OrderStatus.PREPARING]: 'Preparing',
+      [OrderStatus.READY_FOR_PICKUP]: 'Ready for Pickup',
+      [OrderStatus.PICKED_UP]: 'Picked Up',
+      [OrderStatus.DELIVERING]: 'On the Way',
+      [OrderStatus.DELIVERED]: 'Delivered',
+      [OrderStatus.CANCELLED]: 'Cancelled',
+    };
+    
+    return statusMap[status] || status;
+  }
+
+  /**
+   * Get status color for UI
+   */
+  getStatusColor(status: OrderStatus): string {
+    const colorMap: Record<OrderStatus, string> = {
+      [OrderStatus.PENDING]: 'text-yellow-600',
+      [OrderStatus.CONFIRMED]: 'text-blue-600',
+      [OrderStatus.PREPARING]: 'text-orange-600',
+      [OrderStatus.READY_FOR_PICKUP]: 'text-purple-600',
+      [OrderStatus.PICKED_UP]: 'text-indigo-600',
+      [OrderStatus.DELIVERING]: 'text-cyan-600',
+      [OrderStatus.DELIVERED]: 'text-green-600',
+      [OrderStatus.CANCELLED]: 'text-red-600',
+    };
+    
+    return colorMap[status] || 'text-gray-600';
+  }
+}
+
+// Export singleton instance
+export const orderService = new OrderService();
+export default orderService;

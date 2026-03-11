@@ -37,6 +37,7 @@ import com.itcs383.order.repository.OrderRepository;
 public class OrderService {
 
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
+    private static final String RESOURCE_ORDER = "Order";
 
     private final OrderRepository orderRepository;
     // TODO: Add RestaurantServiceClient when Restaurant Service is ready
@@ -126,7 +127,7 @@ public class OrderService {
         logger.debug("Fetching order by ID: {}", orderId);
         
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
+            .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_ORDER, orderId));
         
         return convertToDTO(order);
     }
@@ -140,7 +141,7 @@ public class OrderService {
         logger.debug("Fetching order by number: {}", orderNumber);
         
         Order order = orderRepository.findByOrderNumber(orderNumber)
-            .orElseThrow(() -> new ResourceNotFoundException("Order", orderNumber));
+            .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_ORDER, orderNumber));
         
         return convertToDTO(order);
     }
@@ -156,7 +157,7 @@ public class OrderService {
 
         try {
             Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_ORDER, orderId));
 
             // Validate status transition
             if (!order.canUpdateStatus(request.getNewStatus())) {
@@ -243,7 +244,7 @@ public class OrderService {
         logger.info("Cancelling order {} by user {}", orderId, userId);
 
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));
+            .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_ORDER, orderId));
 
         // Validate cancellation
         if (!canCancelOrder(order)) {

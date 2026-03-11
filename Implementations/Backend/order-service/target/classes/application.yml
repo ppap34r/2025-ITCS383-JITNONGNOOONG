@@ -8,8 +8,8 @@ spring:
   # Database Configuration
   datasource:
     url: jdbc:postgresql://localhost:5432/mhar_orders
-    username: ${DB_USERNAME:thanapornartidtayamontol}
-    password: ${DB_PASSWORD:}
+    username: ${DB_USERNAME:mhar_user}
+    password: ${DB_PASSWORD:mhar_password}
     driver-class-name: org.postgresql.Driver
     
   # JPA Configuration

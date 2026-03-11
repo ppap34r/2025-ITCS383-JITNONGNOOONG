@@ -91,8 +91,8 @@ class RestaurantIntegrationTest {
         restaurant.setPhoneNumber("+66-2-234-5678");
         restaurant.setEmail("lifecycle@test.com");
         restaurant.setAddress("456 Lifecycle Test St");
-        restaurant.setLatitude(13.7307);
-        restaurant.setLongitude(100.5418);
+        restaurant.setLatitude(new BigDecimal("13.7307"));
+        restaurant.setLongitude(new BigDecimal("100.5418"));
         restaurant.setDeliveryFee(new BigDecimal("30.00"));
         restaurant.setMinimumOrderAmount(new BigDecimal("150.00"));
         restaurant.setStatus(RestaurantStatus.PENDING);
@@ -215,8 +215,8 @@ class RestaurantIntegrationTest {
         restaurant.setPhoneNumber("+66-2-123-4567");
         restaurant.setEmail("test@" + name.toLowerCase().replace(" ", "") + ".com");
         restaurant.setAddress("123 " + name + " St");
-        restaurant.setLatitude(13.7563);
-        restaurant.setLongitude(100.5018);
+        restaurant.setLatitude(new BigDecimal("13.7563"));
+        restaurant.setLongitude(new BigDecimal("100.5018"));
         restaurant.setDeliveryFee(new BigDecimal("25.00"));
         restaurant.setMinimumOrderAmount(new BigDecimal("100.00"));
         restaurant.setStatus(status);

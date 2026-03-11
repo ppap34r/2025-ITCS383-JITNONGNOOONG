@@ -184,8 +184,19 @@ class OrderRepositoryTest {
     void findByStatusAndCreatedAtBefore_ShouldReturnOldOrders() {
         // Given - Create an old order
         Order oldOrder = createTestOrder(3L, 3L, OrderStatus.PENDING, "MR004");
-        oldOrder.setCreatedAt(LocalDateTime.now().minusHours(25));
-        entityManager.persistAndFlush(oldOrder);
+        // Persist first to let @CreatedDate work
+        entityManager.persist(oldOrder);
+        entityManager.flush();
+        
+        // Then manually update the timestamp using native query (bypass JPA auditing)
+        LocalDateTime oldTimestamp = LocalDateTime.now().minusHours(25);
+        entityManager.getEntityManager().createNativeQuery(
+            "UPDATE orders SET created_at = :timestamp WHERE order_number = :orderNumber")
+            .setParameter("timestamp", oldTimestamp)
+            .setParameter("orderNumber", "MR004")
+            .executeUpdate();
+        entityManager.flush();
+        entityManager.clear();
 
         // When
         List<Order> oldOrders = orderRepository.findByStatusAndCreatedAtBefore(

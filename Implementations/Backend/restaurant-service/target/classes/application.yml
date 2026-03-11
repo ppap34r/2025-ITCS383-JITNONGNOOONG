@@ -8,8 +8,8 @@ spring:
   # Database Configuration
   datasource:
     url: jdbc:postgresql://localhost:5432/mhar_restaurants
-    username: ${DB_USERNAME:thanapornartidtayamontol}
-    password: ${DB_PASSWORD:}
+    username: ${DB_USERNAME:mhar_user}
+    password: ${DB_PASSWORD:mhar_password}
     driver-class-name: org.postgresql.Driver
     
   # JPA Configuration
@@ -38,7 +38,7 @@ spring:
 
   # Cache Configuration
   cache:
-    type: redis
+    type: none  # Temporarily disable cache to avoid deserialization issues
     redis:
       time-to-live: 600000  # 10 minutes
       cache-null-values: false

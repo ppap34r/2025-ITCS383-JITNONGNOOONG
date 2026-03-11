@@ -1,4 +1,254 @@
+# ========================================
+# Java / Maven
+# ========================================
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ========================================
+# Spring Boot
+# ========================================
+*.log
+*.gz
+*.tmp
+spring.log
+logs/
+
+# ========================================
+# Database
+# ========================================
+*.db
+*.sqlite
+*.sql.bak
+*.dump
+
+# ========================================
+# Node.js / npm
+# ========================================
 node_modules/
-.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnp
+.pnp.js
+
+# Frontend build outputs
 dist/
+dist-ssr/
 build/
+*.local
+
+# ========================================
+# Environment Variables
+# ========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ========================================
+# IDE / Editor
+# ========================================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# Eclipse
+.project
+.classpath
+.settings/
+.metadata
+.recommenders/
+
+# VSCode
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# ========================================
+# Operating System
+# ========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ========================================
+# Testing & Coverage
+# ========================================
+/coverage
+*.cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.lcov
+
+# ========================================
+# Docker
+# ========================================
+.dockerignore
+
+# ========================================
+# Temporary Files
+# ========================================
+*.swp
+*.swo
+*.bak
+*.tmp
+*.temp
+*~
+
+# ========================================
+# Package Files
+# ========================================
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# ========================================
+# Application Specific
+# ========================================
+# Generated sources
+generated-sources/
+generated-test-sources/
+
+# Application logs
+application*.log
+spring*.log
+
+# ========================================
+# Project Specific - MharRuengSang
+# ========================================
+# Service logs directories
+**/logs/
+**/log/
+
+# Java upgrade agent artifacts
+.github/java-upgrade/
+
+# Docker data and volumes
+docker-data/
+postgres-data/
+redis-data/
+
+# Database backup files
+*.dump
+*.backup
+*.sql.backup
+
+# Spring Boot DevTools
+.spring-boot-devtools.properties
+
+# Actuator sensitive endpoints output
+actuator-*.json
+
+# Frontend specific (additional to main ignores)
+**/dist/
+**/build/
+**/.vite/
+**/.turbo/
+
+# Generated API documentation
+**/generated-docs/
+**/api-docs/
+
+# Test reports
+**/test-reports/
+**/test-results/
+**/allure-results/
+**/allure-report/
+
+# Performance test outputs
+**/jmeter-results/
+**/gatling-results/
+
+# Kubernetes local configs
+k8s-local/
+.kube/local/
+
+# Terraform state (if using IaC)
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Environment-specific configs (keep templates only)
+*-local.yml
+*-local.yaml
+*-local.properties
+application-dev.yml
+application-dev.properties
+
+# Backup files from editors
+*~
+*.orig
+*.rej
+.*.sw[op]
+
+# macOS Extended Attributes
+._.DS_Store
+**/._.DS_Store

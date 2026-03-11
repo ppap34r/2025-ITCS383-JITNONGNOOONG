@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,9 +39,13 @@ import java.util.List;
 public class RestaurantController {
 
     private static final Logger logger = LoggerFactory.getLogger(RestaurantController.class);
+    private static final String MSG_RESTAURANT_NOT_FOUND = "Restaurant not found";
 
-    @Autowired
-    private RestaurantService restaurantService;
+    private final RestaurantService restaurantService;
+
+    public RestaurantController(RestaurantService restaurantService) {
+        this.restaurantService = restaurantService;
+    }
 
     // ==================== RESTAURANT ENDPOINTS ====================
 
@@ -87,7 +90,7 @@ public class RestaurantController {
         } catch (RuntimeException e) {
             logger.warn("Restaurant not found: {}", id);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("Restaurant not found"));
+                .body(ApiResponse.error(MSG_RESTAURANT_NOT_FOUND));
         } catch (Exception e) {
             logger.error("Error fetching restaurant: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -242,7 +245,7 @@ public class RestaurantController {
         } catch (RuntimeException e) {
             logger.warn("Restaurant not found for update: {}", id);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("Restaurant not found"));
+                .body(ApiResponse.error(MSG_RESTAURANT_NOT_FOUND));
         } catch (Exception e) {
             logger.error("Error updating restaurant: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -268,7 +271,7 @@ public class RestaurantController {
         } catch (RuntimeException e) {
             logger.warn("Restaurant not found for status update: {}", id);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("Restaurant not found"));
+                .body(ApiResponse.error(MSG_RESTAURANT_NOT_FOUND));
         } catch (Exception e) {
             logger.error("Error updating restaurant status: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -293,7 +296,7 @@ public class RestaurantController {
         } catch (RuntimeException e) {
             logger.warn("Restaurant not found: {}", id);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("Restaurant not found"));
+                .body(ApiResponse.error(MSG_RESTAURANT_NOT_FOUND));
         } catch (Exception e) {
             logger.error("Error toggling restaurant availability: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

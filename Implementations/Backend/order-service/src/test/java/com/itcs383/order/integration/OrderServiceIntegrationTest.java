@@ -170,14 +170,14 @@ class OrderServiceIntegrationTest {
 
     @Test
     void deliveryFeeCalculation_ShouldBeCorrect() {
-        // Test 1: Order below free delivery threshold
+        // Test 1: Order below free delivery threshold (< 300.00)
         CreateOrderRequest smallOrderRequest = createValidOrderRequest();
-        smallOrderRequest.getOrderItems().get(0).setUnitPrice(new BigDecimal("150.00")); // 300 total
+        smallOrderRequest.getOrderItems().get(0).setUnitPrice(new BigDecimal("140.00")); // 2 * 140 = 280 total
 
         OrderDTO smallOrder = orderService.createOrder(smallOrderRequest);
         assertEquals(new BigDecimal("35.00"), smallOrder.getDeliveryFee()); // Delivery fee applied
 
-        // Test 2: Order above free delivery threshold  
+        // Test 2: Order at/above free delivery threshold (>= 300.00)  
         CreateOrderRequest largeOrderRequest = createValidOrderRequest();
         largeOrderRequest.getOrderItems().get(0).setUnitPrice(new BigDecimal("200.00")); // 400 total
         

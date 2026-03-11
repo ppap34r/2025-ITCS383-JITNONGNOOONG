@@ -16,8 +16,8 @@ import com.itcs383.restaurant.repository.RestaurantRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.lang.NonNull;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,8 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -44,27 +42,33 @@ import java.util.stream.Collectors;
 public class RestaurantService {
 
     private static final Logger logger = LoggerFactory.getLogger(RestaurantService.class);
+    
+    // Constants for validation and error messages
+    private static final String RESOURCE_RESTAURANT = "Restaurant";
+    private static final String RESOURCE_MENU_CATEGORY = "MenuCategory";
+    private static final int MAX_MENU_ITEMS_PER_RESTAURANT = 200;
+    private static final int DEFAULT_PREPARATION_TIME = 15;
+    private static final int DEFAULT_DISPLAY_ORDER = 0;
 
-    // Error message constants
-    private static final String RESTAURANT_NOT_FOUND_MSG = "Restaurant not found with ID: ";
-    private static final String MENU_ITEM_NOT_FOUND_MSG = "Menu item not found with ID: ";
-    private static final String MENU_CATEGORY_NOT_FOUND_MSG = "Menu category not found with ID: ";
+    private final RestaurantRepository restaurantRepository;
+    private final MenuItemRepository menuItemRepository;
+    private final MenuCategoryRepository menuCategoryRepository;
 
-    @Autowired
-    private RestaurantRepository restaurantRepository;
-
-    @Autowired
-    private MenuItemRepository menuItemRepository;
-
-    @Autowired
-    private MenuCategoryRepository menuCategoryRepository;
+    public RestaurantService(
+            RestaurantRepository restaurantRepository,
+            MenuItemRepository menuItemRepository,
+            MenuCategoryRepository menuCategoryRepository) {
+        this.restaurantRepository = restaurantRepository;
+        this.menuItemRepository = menuItemRepository;
+        this.menuCategoryRepository = menuCategoryRepository;
+    }
 
     // ==================== RESTAURANT MANAGEMENT ====================
 
     /**
      * Create new restaurant
      */
-    public RestaurantDTO createRestaurant(CreateRestaurantRequest request) {
+    public RestaurantDTO createRestaurant(@NonNull CreateRestaurantRequest request) {
         logger.info("Creating new restaurant: {}", request.getName());
 
         // Validation
@@ -81,8 +85,8 @@ public class RestaurantService {
             request.getDescription(),
             request.getCuisineType(),
             request.getAddress(),
-            request.getLatitude(),
-            request.getLongitude(),
+            BigDecimal.valueOf(request.getLatitude()),
+            BigDecimal.valueOf(request.getLongitude()),
             request.getPhoneNumber(),
             request.getOpeningTime(),
             request.getClosingTime(),
@@ -112,7 +116,7 @@ public class RestaurantService {
         logger.debug("Fetching restaurant with ID: {}", id);
         
         Restaurant restaurant = restaurantRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", id));
+            .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_RESTAURANT, id));
         
         return convertToRestaurantDTO(restaurant);
     }
@@ -122,7 +126,7 @@ public class RestaurantService {
      */
     @Cacheable(value = "restaurant-list", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     @Transactional(readOnly = true)
-    public Page<RestaurantDTO> getAllRestaurants(Pageable pageable) {
+    public Page<RestaurantDTO> getAllRestaurants(@NonNull Pageable pageable) {
         logger.debug("Fetching all active restaurants, page: {}", pageable.getPageNumber());
         
         Page<Restaurant> restaurants = restaurantRepository.findByIsActiveTrueAndAcceptsOrdersTrue(pageable);
@@ -136,7 +140,7 @@ public class RestaurantService {
     public Page<RestaurantDTO> searchRestaurants(String searchTerm, String cuisineType, 
                                                 BigDecimal minRating, BigDecimal maxDeliveryFee,
                                                 Double latitude, Double longitude,
-                                                Pageable pageable) {
+                                                @NonNull Pageable pageable) {
         logger.debug("Searching restaurants with term: {}, cuisine: {}, location: {},{}", 
                     searchTerm, cuisineType, latitude, longitude);
 
@@ -147,14 +151,15 @@ public class RestaurantService {
             restaurants = restaurantRepository.findRestaurantsWithinDeliveryRange(
                 latitude, longitude, pageable);
         } 
-        // Multi-criteria search
+        // Simple search by term only (no other criteria)
+        else if (searchTerm != null && !searchTerm.trim().isEmpty() && 
+                 cuisineType == null && minRating == null && maxDeliveryFee == null) {
+            restaurants = restaurantRepository.searchRestaurants(searchTerm.trim(), pageable);
+        }
+        // Multi-criteria search (includes searchTerm with other filters)
         else if (searchTerm != null || cuisineType != null || minRating != null || maxDeliveryFee != null) {
             restaurants = restaurantRepository.findByMultipleCriteria(
                 cuisineType, minRating, maxDeliveryFee, searchTerm, pageable);
-        }
-        // Simple search by term
-        else if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-            restaurants = restaurantRepository.searchRestaurants(searchTerm.trim(), pageable);
         }
         // Default: all active restaurants
         else {
@@ -169,7 +174,7 @@ public class RestaurantService {
      */
     @Cacheable(value = "restaurants-by-cuisine", key = "#cuisineType + '-' + #pageable.pageNumber")
     @Transactional(readOnly = true)
-    public Page<RestaurantDTO> getRestaurantsByCuisine(String cuisineType, Pageable pageable) {
+    public Page<RestaurantDTO> getRestaurantsByCuisine(@NonNull String cuisineType, @NonNull Pageable pageable) {
         logger.debug("Fetching restaurants by cuisine: {}", cuisineType);
         
         Page<Restaurant> restaurants = restaurantRepository
@@ -210,11 +215,11 @@ public class RestaurantService {
      * Update restaurant
      */
     @CacheEvict(value = {"restaurants", "restaurant-list", "restaurants-by-cuisine"}, allEntries = true)
-    public RestaurantDTO updateRestaurant(Long id, CreateRestaurantRequest request) {
+    public RestaurantDTO updateRestaurant(@NonNull Long id, @NonNull CreateRestaurantRequest request) {
         logger.info("Updating restaurant with ID: {}", id);
 
         Restaurant restaurant = restaurantRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", id));
+            .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_RESTAURANT, id));
 
         validateRestaurantRequest(request);
 
@@ -223,8 +228,8 @@ public class RestaurantService {
         restaurant.setDescription(request.getDescription());
         restaurant.setCuisineType(request.getCuisineType());
         restaurant.setAddress(request.getAddress());
-        restaurant.setLatitude(request.getLatitude());
-        restaurant.setLongitude(request.getLongitude());
+        restaurant.setLatitude(BigDecimal.valueOf(request.getLatitude()));
+        restaurant.setLongitude(BigDecimal.valueOf(request.getLongitude()));
         restaurant.setPhoneNumber(request.getPhoneNumber());
         restaurant.setEmail(request.getEmail());
         restaurant.setOpeningTime(request.getOpeningTime());
@@ -245,11 +250,11 @@ public class RestaurantService {
      * Update restaurant status (Admin operation)
      */
     @CacheEvict(value = {"restaurants", "restaurant-list"}, allEntries = true)
-    public RestaurantDTO updateRestaurantStatus(Long id, RestaurantStatus status, String reason) {
+    public RestaurantDTO updateRestaurantStatus(@NonNull Long id, @NonNull RestaurantStatus status, String reason) {
         logger.info("Updating restaurant {} status to: {}", id, status);
 
         Restaurant restaurant = restaurantRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", id));
+            .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_RESTAURANT, id));
 
         restaurant.setStatus(status);
         
@@ -270,11 +275,11 @@ public class RestaurantService {
      * Toggle restaurant availability
      */
     @CacheEvict(value = {"restaurants", "restaurant-list"}, allEntries = true)
-    public RestaurantDTO toggleRestaurantAvailability(Long id, Boolean acceptsOrders) {
+    public RestaurantDTO toggleRestaurantAvailability(@NonNull Long id, @NonNull Boolean acceptsOrders) {
         logger.info("Toggling restaurant {} availability to: {}", id, acceptsOrders);
 
         Restaurant restaurant = restaurantRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", id));
+            .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_RESTAURANT, id));
 
         restaurant.setAcceptsOrders(acceptsOrders);
         Restaurant savedRestaurant = restaurantRepository.save(restaurant);
@@ -288,16 +293,16 @@ public class RestaurantService {
      * Add menu item to restaurant
      */
     @CacheEvict(value = {"restaurant-menu", "menu-items"}, allEntries = true)
-    public MenuItemDTO addMenuItem(Long restaurantId, CreateMenuItemRequest request) {
+    public MenuItemDTO addMenuItem(@NonNull Long restaurantId, @NonNull CreateMenuItemRequest request) {
         logger.info("Adding menu item '{}' to restaurant {}", request.getName(), restaurantId);
 
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", restaurantId));
+            .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_RESTAURANT, restaurantId));
 
         // Validate menu item limit
         long currentItems = menuItemRepository.countByRestaurantIdAndIsAvailableTrue(restaurantId);
-        if (currentItems >= 200) { // Max items per restaurant
-            throw new IllegalStateException("Maximum number of menu items (200) reached for this restaurant");
+        if (currentItems >= MAX_MENU_ITEMS_PER_RESTAURANT) {
+            throw new IllegalStateException("Maximum number of menu items (" + MAX_MENU_ITEMS_PER_RESTAURANT + ") reached for this restaurant");
         }
 
         // Check for duplicate item name
@@ -313,7 +318,7 @@ public class RestaurantService {
         if (request.getImageUrl() != null) menuItem.setImageUrl(request.getImageUrl());
         if (request.getCategoryId() != null) {
             MenuCategory category = menuCategoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("MenuCategory", request.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_MENU_CATEGORY, request.getCategoryId()));
             menuItem.setCategory(category);
         }
 
@@ -323,11 +328,11 @@ public class RestaurantService {
         menuItem.setIsVegan(Optional.ofNullable(request.getIsVegan()).orElse(Boolean.FALSE));
         menuItem.setIsGlutenFree(Optional.ofNullable(request.getIsGlutenFree()).orElse(Boolean.FALSE));
         menuItem.setIsSpicy(Optional.ofNullable(request.getIsSpicy()).orElse(Boolean.FALSE));
-        menuItem.setPreparationTime(request.getPreparationTime() != null ? request.getPreparationTime() : 15);
+        menuItem.setPreparationTime(request.getPreparationTime() != null ? request.getPreparationTime() : DEFAULT_PREPARATION_TIME);
         menuItem.setCalories(request.getCalories());
         menuItem.setIngredients(request.getIngredients());
         menuItem.setAllergens(request.getAllergens());
-        menuItem.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
+        menuItem.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : DEFAULT_DISPLAY_ORDER);
 
         MenuItem savedMenuItem = menuItemRepository.save(menuItem);
         
@@ -340,7 +345,7 @@ public class RestaurantService {
      */
     @Cacheable(value = "restaurant-menu", key = "#restaurantId")
     @Transactional(readOnly = true)
-    public Page<MenuItemDTO> getRestaurantMenu(Long restaurantId, Pageable pageable) {
+    public Page<MenuItemDTO> getRestaurantMenu(@NonNull Long restaurantId, @NonNull Pageable pageable) {
         logger.debug("Fetching menu for restaurant: {}", restaurantId);
         
         Page<MenuItem> menuItems = menuItemRepository.findByRestaurantIdAndIsAvailableTrue(
@@ -352,7 +357,7 @@ public class RestaurantService {
      * Get menu items by category
      */
     @Transactional(readOnly = true)
-    public Page<MenuItemDTO> getMenuItemsByCategory(Long categoryId, Pageable pageable) {
+    public Page<MenuItemDTO> getMenuItemsByCategory(@NonNull Long categoryId, @NonNull Pageable pageable) {
         logger.debug("Fetching menu items for category: {}", categoryId);
         
         Page<MenuItem> menuItems = menuItemRepository.findByCategoryIdAndIsAvailableTrue(
@@ -380,7 +385,7 @@ public class RestaurantService {
      * Search menu items
      */
     @Transactional(readOnly = true)
-    public Page<MenuItemDTO> searchMenuItems(Long restaurantId, String searchTerm, Pageable pageable) {
+    public Page<MenuItemDTO> searchMenuItems(@NonNull Long restaurantId, @NonNull String searchTerm, @NonNull Pageable pageable) {
         logger.debug("Searching menu items for restaurant {} with term: {}", restaurantId, searchTerm);
         
         Page<MenuItem> menuItems = menuItemRepository.searchMenuItems(restaurantId, searchTerm, pageable);
@@ -393,11 +398,11 @@ public class RestaurantService {
      * Add menu category
      */
     @CacheEvict(value = {"menu-categories"}, allEntries = true)
-    public MenuCategory addMenuCategory(Long restaurantId, CreateMenuCategoryRequest request) {
+    public MenuCategory addMenuCategory(@NonNull Long restaurantId, @NonNull CreateMenuCategoryRequest request) {
         logger.info("Adding category '{}' to restaurant {}", request.getName(), restaurantId);
 
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
-            .orElseThrow(() -> new ResourceNotFoundException("Restaurant", restaurantId));
+            .orElseThrow(() -> new ResourceNotFoundException(RESOURCE_RESTAURANT, restaurantId));
 
         // Check for duplicate category name
         if (menuCategoryRepository.existsByNameAndRestaurantId(request.getName(), restaurantId)) {
@@ -455,7 +460,7 @@ public class RestaurantService {
     /**
      * Validate restaurant creation/update request
      */
-    private void validateRestaurantRequest(CreateRestaurantRequest request) {
+    private void validateRestaurantRequest(@NonNull CreateRestaurantRequest request) {
         // Validate operating hours
         if (request.getOpeningTime() != null && request.getClosingTime() != null) {
             // Allow same opening and closing time for 24-hour restaurants
@@ -482,15 +487,15 @@ public class RestaurantService {
     /**
      * Convert Restaurant entity to DTO
      */
-    private RestaurantDTO convertToRestaurantDTO(Restaurant restaurant) {
+    private RestaurantDTO convertToRestaurantDTO(@NonNull Restaurant restaurant) {
         RestaurantDTO dto = new RestaurantDTO();
         dto.setId(restaurant.getId());
         dto.setName(restaurant.getName());
         dto.setDescription(restaurant.getDescription());
         dto.setCuisineType(restaurant.getCuisineType());
         dto.setAddress(restaurant.getAddress());
-        dto.setLatitude(restaurant.getLatitude());
-        dto.setLongitude(restaurant.getLongitude());
+        dto.setLatitude(restaurant.getLatitude().doubleValue());
+        dto.setLongitude(restaurant.getLongitude().doubleValue());
         dto.setPhoneNumber(restaurant.getPhoneNumber());
         dto.setEmail(restaurant.getEmail());
         dto.setOpeningTime(restaurant.getOpeningTime());
@@ -520,7 +525,7 @@ public class RestaurantService {
     /**
      * Convert MenuItem entity to DTO
      */
-    private MenuItemDTO convertToMenuItemDTO(MenuItem menuItem) {
+    private MenuItemDTO convertToMenuItemDTO(@NonNull MenuItem menuItem) {
         MenuItemDTO dto = new MenuItemDTO();
         dto.setId(menuItem.getId());
         dto.setName(menuItem.getName());

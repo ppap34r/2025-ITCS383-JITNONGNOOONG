@@ -82,13 +82,13 @@ public class Restaurant {
     @DecimalMin(value = "-90.0", message = "Invalid latitude")
     @DecimalMax(value = "90.0", message = "Invalid latitude")
     @Column(nullable = false, precision = 10, scale = 8)
-    private Double latitude;
+    private BigDecimal latitude;
 
     @NotNull(message = "Longitude is required")
     @DecimalMin(value = "-180.0", message = "Invalid longitude")
     @DecimalMax(value = "180.0", message = "Invalid longitude")
     @Column(nullable = false, precision = 11, scale = 8)
-    private Double longitude;
+    private BigDecimal longitude;
 
     // Contact Information
     @NotBlank(message = "Phone number is required")
@@ -181,7 +181,7 @@ public class Restaurant {
     public Restaurant() {}
 
     public Restaurant(String name, String description, String cuisineType, String address, 
-                     Double latitude, Double longitude, String phoneNumber, 
+                     BigDecimal latitude, BigDecimal longitude, String phoneNumber, 
                      LocalTime openingTime, LocalTime closingTime, Long ownerId,
                      BigDecimal minimumOrderAmount, BigDecimal deliveryFee, 
                      Integer estimatedDeliveryTime) {
@@ -241,7 +241,7 @@ public class Restaurant {
         BigDecimal totalScore = averageRating.multiply(BigDecimal.valueOf(totalReviews))
                                             .add(newRating);
         totalReviews++;
-        averageRating = totalScore.divide(BigDecimal.valueOf(totalReviews), 2, BigDecimal.ROUND_HALF_UP);
+        averageRating = totalScore.divide(BigDecimal.valueOf(totalReviews), 2, java.math.RoundingMode.HALF_UP);
     }
 
     /**
@@ -256,7 +256,7 @@ public class Restaurant {
      * Check if restaurant delivers to given location
      */
     public boolean deliversTo(double targetLatitude, double targetLongitude) {
-        double distance = calculateDistance(latitude, longitude, targetLatitude, targetLongitude);
+        double distance = calculateDistance(latitude.doubleValue(), longitude.doubleValue(), targetLatitude, targetLongitude);
         return distance <= getDeliveryRadiusKm();
     }
 
@@ -294,11 +294,11 @@ public class Restaurant {
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
-    public Double getLatitude() { return latitude; }
-    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    public BigDecimal getLatitude() { return latitude; }
+    public void setLatitude(BigDecimal latitude) { this.latitude = latitude; }
 
-    public Double getLongitude() { return longitude; }
-    public void setLongitude(Double longitude) { this.longitude = longitude; }
+    public BigDecimal getLongitude() { return longitude; }
+    public void setLongitude(BigDecimal longitude) { this.longitude = longitude; }
 
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
