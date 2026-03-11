@@ -560,7 +560,7 @@ public class RestaurantService {
     @Transactional(readOnly = true)
     public java.util.Map<String, Long> getRestaurantStats() {
         long totalRestaurants = restaurantRepository.count();
-        long activeRestaurants = restaurantRepository.countByStatus(RestaurantStatus.ACTIVE);
+        long activeRestaurants = restaurantRepository.countByStatus(RestaurantStatus.APPROVED);
         return java.util.Map.of(
             "totalRestaurants", totalRestaurants,
             "activeRestaurants", activeRestaurants

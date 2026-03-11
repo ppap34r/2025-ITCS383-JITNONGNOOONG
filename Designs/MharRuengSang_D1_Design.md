@@ -1199,3 +1199,6 @@ Status: live
 - [Payment Service. Component Diagram](#3.3.-payment-service.-component-diagram)
 
 <br>
+
+## Class Diagram
+![Class Diagram](./Image/class.png)

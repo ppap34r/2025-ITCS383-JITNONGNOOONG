@@ -166,4 +166,18 @@ class RestaurantServiceTest {
                 restaurantService.updateMenuItem(1L, 10L, request))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
+
+    // ========== getRestaurantStats tests ==========
+
+    @Test
+    void getRestaurantStats_ShouldReturnTotalAndActiveCount() {
+        when(restaurantRepository.count()).thenReturn(10L);
+        when(restaurantRepository.countByStatus(com.itcs383.common.enums.RestaurantStatus.APPROVED)).thenReturn(8L);
+
+        java.util.Map<String, Long> result = restaurantService.getRestaurantStats();
+
+        assertThat(result).isNotNull();
+        assertThat(result.get("totalRestaurants")).isEqualTo(10L);
+        assertThat(result.get("activeRestaurants")).isEqualTo(8L);
+    }
 }

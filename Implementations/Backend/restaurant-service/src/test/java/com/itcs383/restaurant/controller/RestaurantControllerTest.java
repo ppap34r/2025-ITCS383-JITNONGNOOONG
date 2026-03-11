@@ -387,4 +387,91 @@ class RestaurantControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
+
+    @Test
+    void getRestaurantStats_ShouldReturn200WithCounts() throws Exception {
+        when(restaurantService.getRestaurantStats())
+                .thenReturn(java.util.Map.of("totalRestaurants", 10L, "activeRestaurants", 8L));
+
+        mockMvc.perform(get("/api/restaurants/stats"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.totalRestaurants").value(10))
+                .andExpect(jsonPath("$.data.activeRestaurants").value(8));
+    }
+
+    @Test
+    void getFeaturedMenuItems_ShouldReturnFeaturedItems() throws Exception {
+        com.itcs383.common.dto.MenuItemDTO featuredItem =
+                new com.itcs383.common.dto.MenuItemDTO(1L, "Signature Pad Thai", "Our best dish",
+                        new java.math.BigDecimal("150.00"));
+
+        when(restaurantService.getFeaturedMenuItems(1L))
+                .thenReturn(Arrays.asList(featuredItem));
+
+        mockMvc.perform(get("/api/restaurants/1/menu/featured"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].name").value("Signature Pad Thai"));
+    }
+
+    @Test
+    void searchMenuItems_ShouldReturnFilteredMenuItems() throws Exception {
+        com.itcs383.common.dto.MenuItemDTO menuItem =
+                new com.itcs383.common.dto.MenuItemDTO(1L, "Pad Thai", "Stir-fried noodles",
+                        new java.math.BigDecimal("120.00"));
+        org.springframework.data.domain.Page<com.itcs383.common.dto.MenuItemDTO> menuPage =
+                new PageImpl<>(Arrays.asList(menuItem), PageRequest.of(0, 20), 1);
+
+        when(restaurantService.searchMenuItems(anyLong(), any(String.class), any()))
+                .thenReturn(menuPage);
+
+        mockMvc.perform(get("/api/restaurants/1/menu/search")
+                .param("searchTerm", "Pad"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content[0].name").value("Pad Thai"));
+    }
+
+    @Test
+    void getRestaurantCategories_ShouldReturnCategories() throws Exception {
+        com.itcs383.restaurant.entity.MenuCategory category =
+                new com.itcs383.restaurant.entity.MenuCategory("Noodles", "Noodle dishes", null);
+
+        when(restaurantService.getRestaurantCategories(1L))
+                .thenReturn(Arrays.asList(category));
+
+        mockMvc.perform(get("/api/restaurants/1/categories"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].name").value("Noodles"));
+    }
+
+    @Test
+    void getMenuItemsByCategory_ShouldReturnPagedMenuItems() throws Exception {
+        com.itcs383.common.dto.MenuItemDTO menuItem =
+                new com.itcs383.common.dto.MenuItemDTO(1L, "Pad Thai", "Stir-fried noodles",
+                        new java.math.BigDecimal("120.00"));
+        org.springframework.data.domain.Page<com.itcs383.common.dto.MenuItemDTO> menuPage =
+                new PageImpl<>(Arrays.asList(menuItem), PageRequest.of(0, 20), 1);
+
+        when(restaurantService.getMenuItemsByCategory(anyLong(), any()))
+                .thenReturn(menuPage);
+
+        mockMvc.perform(get("/api/restaurants/categories/1/items"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content[0].name").value("Pad Thai"));
+    }
+
+    @Test
+    void deleteMenuCategory_ShouldReturnOk() throws Exception {
+        doNothing().when(restaurantService).deleteMenuCategory(anyLong(), anyLong());
+
+        mockMvc.perform(delete("/api/restaurants/1/categories/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 }

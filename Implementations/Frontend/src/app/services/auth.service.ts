@@ -47,6 +47,16 @@ export interface LoginResponse {
   message: string;
 }
 
+// Demo accounts shared between login and verifyOtp mock fallbacks
+const MOCK_USERS: Record<string, { name: string; role: string; id: number }> = {
+  'customer@foodexpress.com':   { name: 'Demo Customer',       role: 'CUSTOMER',   id: 100 },
+  'sarah@foodexpress.com':      { name: 'Sarah Wilson',         role: 'CUSTOMER',   id: 101 },
+  'restaurant@foodexpress.com': { name: 'Bangkok Street Food',  role: 'RESTAURANT', id: 2 },
+  'sushi@foodexpress.com':      { name: 'Sushi Master',         role: 'RESTAURANT', id: 6 },
+  'rider@foodexpress.com':      { name: 'Demo Rider',           role: 'RIDER',      id: 200 },
+  'admin@foodexpress.com':      { name: 'Demo Admin',           role: 'ADMIN',      id: 300 },
+};
+
 /**
  * Login with email and password (triggers OTP)
  * 
@@ -60,17 +70,7 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
     // Fallback to mock authentication if backend is unavailable
     console.warn('[AUTH] Backend unavailable, using mock authentication', error.message);
     
-    // Map demo accounts to mock users with stable IDs matching the backend DB
-    const mockUsers: Record<string, {name: string, role: string, id: number}> = {
-      'customer@foodexpress.com':   { name: 'Demo Customer',       role: 'CUSTOMER',   id: 100 },
-      'sarah@foodexpress.com':      { name: 'Sarah Wilson',         role: 'CUSTOMER',   id: 101 },
-      'restaurant@foodexpress.com': { name: 'Bangkok Street Food',  role: 'RESTAURANT', id: 2 },
-      'sushi@foodexpress.com':      { name: 'Sushi Master',         role: 'RESTAURANT', id: 6 },
-      'rider@foodexpress.com':      { name: 'Demo Rider',           role: 'RIDER',      id: 200 },
-      'admin@foodexpress.com':      { name: 'Demo Admin',           role: 'ADMIN',      id: 300 },
-    };
-    
-    const mockUser = mockUsers[credentials.email];
+    const mockUser = MOCK_USERS[credentials.email];
     
     if (mockUser) {
       return {
@@ -127,17 +127,7 @@ export const verifyOtp = async (otpData: OtpRequest): Promise<LoginResponse> => 
     
     // Accept any 6-digit OTP in mock mode
     if (otpData.otp && otpData.otp.length === 6) {
-      // Map demo accounts to mock users with stable IDs matching the backend DB
-      const mockUsers: Record<string, {name: string, role: string, id: number}> = {
-        'customer@foodexpress.com':   { name: 'Demo Customer',      role: 'CUSTOMER',   id: 100 },
-        'sarah@foodexpress.com':      { name: 'Sarah Wilson',        role: 'CUSTOMER',   id: 101 },
-        'restaurant@foodexpress.com': { name: 'Bangkok Street Food', role: 'RESTAURANT', id: 2 },
-        'sushi@foodexpress.com':      { name: 'Sushi Master',        role: 'RESTAURANT', id: 6 },
-        'rider@foodexpress.com':      { name: 'Demo Rider',          role: 'RIDER',      id: 200 },
-        'admin@foodexpress.com':      { name: 'Demo Admin',          role: 'ADMIN',      id: 300 },
-      };
-      
-      const mockUser = mockUsers[otpData.email];
+      const mockUser = MOCK_USERS[otpData.email];
       
       if (mockUser) {
         const mockToken = 'mock_token_' + Date.now();

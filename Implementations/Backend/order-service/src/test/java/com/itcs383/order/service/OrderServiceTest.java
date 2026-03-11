@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.never;
@@ -29,6 +30,7 @@ import org.springframework.data.domain.Pageable;
 import com.itcs383.common.dto.OrderDTO;
 import com.itcs383.common.enums.OrderStatus;
 import com.itcs383.common.exception.OrderStatusException;
+import com.itcs383.common.exception.ResourceNotFoundException;
 import com.itcs383.order.dto.CreateOrderRequest;
 import com.itcs383.order.dto.UpdateOrderStatusRequest;
 import com.itcs383.order.entity.Order;
@@ -303,6 +305,41 @@ class OrderServiceTest {
         verify(orderRepository, never()).save(any(Order.class));
     }
 
+    @Test
+    void cancelOrder_WhenOrderNotFound_ShouldThrowResourceNotFoundException() {
+        // Given
+        Long orderId = 999L;
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class,
+            () -> orderService.cancelOrder(orderId, 1L, "reason"));
+        verify(orderRepository).findById(orderId);
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    void getRestaurantOrdersByStatus_ShouldReturnFilteredOrders() {
+        // Given
+        Long restaurantId = 1L;
+        OrderStatus status = OrderStatus.PENDING;
+        Pageable pageable = PageRequest.of(0, 20);
+
+        List<Order> orders = Arrays.asList(createValidOrder());
+        Page<Order> orderPage = new PageImpl<>(orders, pageable, orders.size());
+
+        when(orderRepository.findByRestaurantIdAndStatusOrderByCreatedAtAsc(restaurantId, status, pageable))
+            .thenReturn(orderPage);
+
+        // When
+        Page<OrderDTO> result = orderService.getRestaurantOrdersByStatus(restaurantId, status, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(orderRepository).findByRestaurantIdAndStatusOrderByCreatedAtAsc(restaurantId, status, pageable);
+    }
+
     // Helper methods for test data creation
     private CreateOrderRequest createValidOrderRequest() {
         CreateOrderRequest request = new CreateOrderRequest();
@@ -347,5 +384,28 @@ class OrderServiceTest {
 
         order.getOrderItems().add(item);
         return order;
+    }
+
+    // ========== getAdminStats tests ==========
+
+    @Test
+    void getAdminStats_ShouldReturnAllCountsAndRevenue() {
+        when(orderRepository.countAllSince(any(LocalDateTime.class)))
+                .thenReturn(5L)    // todayOrderCount
+                .thenReturn(50L);  // monthOrderCount
+        when(orderRepository.count()).thenReturn(200L);
+        when(orderRepository.sumTotalAmountByStatusSince(eq(OrderStatus.DELIVERED), any(LocalDateTime.class)))
+                .thenReturn(new BigDecimal("1200.00"))   // todayRevenue
+                .thenReturn(new BigDecimal("12000.00")); // monthRevenue
+
+        java.util.Map<String, Object> result = orderService.getAdminStats();
+
+        assertNotNull(result);
+        assertEquals(5L, result.get("todayOrders"));
+        assertEquals(50L, result.get("monthOrders"));
+        assertEquals(200L, result.get("totalOrders"));
+        // Commission is 10% of revenue — compare numerically, ignoring scale
+        assertTrue(new BigDecimal("120.00").compareTo((BigDecimal) result.get("todayRevenue")) == 0);
+        assertTrue(new BigDecimal("1200.00").compareTo((BigDecimal) result.get("monthRevenue")) == 0);
     }
 }

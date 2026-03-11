@@ -79,32 +79,27 @@ describe('RestaurantDetail', () => {
     expect(document.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
-  it('renders the restaurant name after data loads', async () => {
-    render(<RestaurantDetail />);
-    await waitFor(() => {
+  describe('after data loads', () => {
+    beforeEach(async () => {
+      render(<RestaurantDetail />);
+      await waitFor(() => expect(screen.getByText('Thai Palace')).toBeInTheDocument());
+    });
+
+    it('renders the restaurant name', () => {
       expect(screen.getByText('Thai Palace')).toBeInTheDocument();
     });
-  });
 
-  it('renders menu items using categoryName', async () => {
-    render(<RestaurantDetail />);
-    await waitFor(() => {
+    it('renders menu items using categoryName', () => {
       expect(screen.getByText('Pad Thai')).toBeInTheDocument();
       expect(screen.getByText('Green Curry')).toBeInTheDocument();
     });
-  });
 
-  it('renders category headings derived from categoryName', async () => {
-    render(<RestaurantDetail />);
-    await waitFor(() => {
+    it('renders category headings derived from categoryName', () => {
       expect(screen.getByText('Noodles')).toBeInTheDocument();
       expect(screen.getByText('Curry')).toBeInTheDocument();
     });
-  });
 
-  it('renders minimumOrderAmount from restaurant data', async () => {
-    render(<RestaurantDetail />);
-    await waitFor(() => {
+    it('renders minimumOrderAmount from restaurant data', () => {
       // minimumOrderAmount: 100 should appear somewhere (e.g. "Min order ฿100")
       expect(screen.getByText(/100/)).toBeInTheDocument();
     });

@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -294,6 +295,66 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.error").exists());
 
         verify(orderService).updateOrderStatus(eq(orderId), any(UpdateOrderStatusRequest.class));
+    }
+
+    @Test
+    void getAdminStats_ShouldReturn200WithStats() throws Exception {
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+        stats.put("todayOrders", 5L);
+        stats.put("monthOrders", 50L);
+        stats.put("totalOrders", 200L);
+        stats.put("todayRevenue", new BigDecimal("120.00"));
+        stats.put("monthRevenue", new BigDecimal("1200.00"));
+
+        when(orderService.getAdminStats()).thenReturn(stats);
+
+        mockMvc.perform(get("/orders/admin/stats"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.todayOrders").value(5))
+                .andExpect(jsonPath("$.data.totalOrders").value(200));
+
+        verify(orderService).getAdminStats();
+    }
+
+    @Test
+    void health_ShouldReturnStatusUp() throws Exception {
+        mockMvc.perform(get("/orders/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.service").value("Order Service"));
+    }
+
+    @Test
+    void getRestaurantOrders_WithStatusFilter_ShouldReturnFilteredOrders() throws Exception {
+        Long restaurantId = 1L;
+        Page<OrderDTO> page = new PageImpl<>(
+                Arrays.asList(validOrderDTO), PageRequest.of(0, 20), 1);
+
+        when(orderService.getRestaurantOrdersByStatus(eq(restaurantId), eq(OrderStatus.PENDING), any()))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/orders/restaurant/{restaurantId}", restaurantId)
+                .param("status", "PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content[0].id").value(1));
+
+        verify(orderService).getRestaurantOrdersByStatus(eq(restaurantId), eq(OrderStatus.PENDING), any());
+    }
+
+    @Test
+    void cancelOrderViaDelete_ShouldDelegateToCancelOrder() throws Exception {
+        Long orderId = 1L;
+        when(orderService.cancelOrder(eq(orderId), any(), any())).thenReturn(validOrderDTO);
+
+        mockMvc.perform(delete("/orders/{id}", orderId)
+                .param("userId", "2")
+                .param("reason", "Changed my mind"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        verify(orderService).cancelOrder(eq(orderId), any(), any());
     }
 
     // Helper methods for test data creation
