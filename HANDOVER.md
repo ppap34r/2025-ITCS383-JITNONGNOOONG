@@ -58,7 +58,7 @@ App Diagram: Mobile app module is missing. API Gateway, Restaurant, Order manage
 3.3 Payment Service: Payment modules are in several places and workflows are not consistent in the implementation. Credit Card is found in the payment gateway module which contains other payments as well.
 ![Payment Service](Designs/Image/Payment%20Service.%20Component%20Diagram.png)
 
-3.4 Restaurant Service: Promotion Controller(main/controller/promotioncontroller) covers all create, update, delete . For Menu controller(restaurant-service) covers all CRUD
+3.4 Restaurant Service: Promotion Controller(main/controller/promotioncontroller) covers all create, update, delete but cannot calculate discount and customer also cannot enter code. For Menu controller(restaurant-service) covers all CRUD
 ![Restaurant Service](Designs/Image/Restaurant%20Service.%20Component%20Diagram.png)
 
 There are some modules that were not mentioned in the C4 diagram, but appear on the implementation. There are also components that appear on the C4 diagram, but not in the implementation. There are components that were in the higher hierarchy but disappear in the lower diagrams. Overall, the diagram is quite inconsistent especially in payment components, but the consistency from the components diagram to implementation is okay despite some naming inconsistencies.
