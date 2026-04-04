@@ -747,50 +747,51 @@ So, I've created the new backend with migrate to Node.JS, which will implement m
 First, ensure you have a local MySQL server running (e.g., via XAMPP, MAMP, or native MySQL install).
  
 1. Open your terminal or MySQL command line.
-2. Import the schema and demo data using the provided SQL script:
-   ```bash
-   mysql -u root -p < Implementations/Backend-NodeJS/setup-db.sql
-   ```
+2. Import the schema and demo data using the provided SQL script
+```bash
+mysql -u root -p < Implementations/Backend-NodeJS/setup-db.sql
+```
 This will create a database named `mharruengsang`, build all the necessary tables (Users, Restaurants, Menus, Orders), and populate them with demo data and bcrypt-hashed passwords.
  
 ### 2. Backend Setup (Node.js)
 1. Open a new terminal window and navigate to the new Node.js backend directory:
-   ```bash
-   cd Implementations/Backend-NodeJS
-   ```
+```bash
+cd Implementations/Backend-NodeJS
+```
 2. Install the necessary Node dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 3. Create/verify your `.env` file inside the `Backend-NodeJS` folder. It should look like this:
-   ```env
-   PORT=8080
-   DB_HOST=localhost
-   DB_USER=mharruengsang
-   DB_PASSWORD=mhar1234
-   DB_NAME=mharruengsang
-   JWT_SECRET=supersecretkey_mharruengsang
-   ```
+```bash
+PORT=8080
+DB_HOST=localhost
+DB_USER=mharruengsang
+DB_PASSWORD=mhar1234
+DB_NAME=mharruengsang
+JWT_SECRET=supersecretkey_mharruengsang
+```
    *(We've pre-configured `DB_USER` and `DB_PASSWORD` to use the dedicated user created by the initial setup script).*
+   
 4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
    The backend will now be running on `http://localhost:8080`.
  
 ### 3. Frontend Setup (React)
 1. Open another terminal window and navigate to the frontend directory:
-   ```bash
-   cd Implementations/Frontend
-   ```
+```bash
+cd Implementations/Frontend
+```
 2. Install the frontend dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 3. Start the Vite development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
    The frontend will now be accessible at `http://localhost:5173`.
  
 This should solve the conflict problem and make sure your group will work in this project more flawless krub.
