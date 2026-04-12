@@ -340,7 +340,7 @@ function ReviewComposer({
   const canReview = [OrderStatus.DELIVERED, 'COMPLETED'].includes(order.status);
   const alreadyReviewed = Boolean(order.restaurantReviewId);
 
-  const handleSubmit = async () => {
+  const submitReview = async () => {
     if (!canReview || alreadyReviewed) {
       return;
     }
@@ -368,6 +368,10 @@ function ReviewComposer({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = () => {
+    void submitReview();
   };
 
   if (alreadyReviewed) {

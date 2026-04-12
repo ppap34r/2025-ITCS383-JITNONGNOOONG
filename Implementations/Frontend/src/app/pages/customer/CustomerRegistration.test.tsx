@@ -88,6 +88,31 @@ describe('CustomerRegistration', () => {
     });
   });
 
+  it('shows a loading state while registration is in progress', async () => {
+    let resolveRegistration: (() => void) | undefined;
+    vi.mocked(authService.register).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRegistration = () => resolve({} as never);
+        })
+    );
+
+    render(<CustomerRegistration />);
+
+    fillForm();
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'password123' } });
+    fireEvent.submit(screen.getByRole('button', { name: /create account/i }).closest('form')!);
+
+    expect(screen.getByRole('button', { name: /creating account/i })).toBeDisabled();
+
+    resolveRegistration?.();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /create account/i })).not.toBeDisabled();
+    });
+  });
+
   it('shows the API error message when registration fails', async () => {
     vi.mocked(authService.register).mockRejectedValueOnce({
       response: { data: { message: 'Email already exists' } },

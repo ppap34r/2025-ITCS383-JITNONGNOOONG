@@ -28,9 +28,7 @@ export default function CustomerRegistration() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault();
-    
+  const submitRegistration = async () => {
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -75,6 +73,11 @@ export default function CustomerRegistration() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault();
+    void submitRegistration();
   };
 
   return (
