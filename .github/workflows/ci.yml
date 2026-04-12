@@ -28,6 +28,15 @@ jobs:
       - name: Install backend dependencies
         run: npm ci
 
+      - name: Run backend tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload backend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: Implementations/Backend-NodeJS/coverage
+
   frontend:
     name: Frontend Build and Test
     runs-on: ubuntu-latest
@@ -87,6 +96,10 @@ jobs:
         working-directory: Implementations/Backend-NodeJS
         run: npm ci
 
+      - name: Generate backend coverage for SonarQube
+        working-directory: Implementations/Backend-NodeJS
+        run: npm run test:coverage
+
       - name: Install frontend dependencies
         working-directory: Implementations/Frontend
         run: npm ci
@@ -100,4 +113,3 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
-
