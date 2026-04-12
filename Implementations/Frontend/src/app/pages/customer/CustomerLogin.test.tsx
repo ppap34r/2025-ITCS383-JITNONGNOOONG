@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
 import CustomerLogin from './CustomerLogin';
@@ -12,6 +13,12 @@ vi.mock('../../contexts/AppContext', () => ({
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
+}));
+
+vi.mock('../../components/ui/input-otp', () => ({
+  InputOTP: ({ children }: { children: ReactNode }) => <div data-testid="mock-otp">{children}</div>,
+  InputOTPGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  InputOTPSlot: ({ index }: { index: number }) => <input aria-label={`otp-${index}`} />,
 }));
 
 describe('CustomerLogin', () => {
