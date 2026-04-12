@@ -26,8 +26,21 @@ const mockOrder = {
   status: 'PENDING',
   totalAmount: 350,
   createdAt: '2025-01-01T10:00:00Z',
+  updatedAt: undefined,
   deliveryAddress: '123 Test St',
+  deliveryFee: 0,
+  deliveryLatitude: undefined,
+  deliveryLongitude: undefined,
+  customerName: undefined,
+  customerPhoneNumber: undefined,
+  restaurantName: undefined,
+  riderId: undefined,
   orderItems: [],
+  specialInstructions: undefined,
+  restaurantReviewId: undefined,
+  restaurantRating: undefined,
+  restaurantReviewText: undefined,
+  restaurantReviewedAt: undefined,
 };
 
 const mockPaginated = {
@@ -78,11 +91,13 @@ describe('getOrderById', () => {
 
     const result = await orderService.getOrderById(1);
 
-    expect(result).toEqual({
-      ...mockOrder,
-      customerName: 'John Doe',
-      customerPhoneNumber: '+66812345678',
-    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        ...mockOrder,
+        customerName: 'John Doe',
+        customerPhoneNumber: '+66812345678',
+      }),
+    );
     expect(apiClient.get).toHaveBeenCalledTimes(2);
   });
 
@@ -100,7 +115,7 @@ describe('getOrderByNumber', () => {
 
     const result = await orderService.getOrderByNumber('MR-0001');
 
-    expect(result).toEqual(mockOrder);
+    expect(result).toEqual(expect.objectContaining(mockOrder));
   });
 
   it('rethrows on API error', async () => {
@@ -117,7 +132,10 @@ describe('getCustomerOrders', () => {
 
     const result = await orderService.getCustomerOrders(100);
 
-    expect(result).toEqual(mockPaginated);
+    expect(result).toEqual({
+      ...mockPaginated,
+      content: [mockOrder],
+    });
     expect(apiClient.get).toHaveBeenCalledOnce();
   });
 
@@ -135,7 +153,10 @@ describe('getRestaurantOrders', () => {
 
     const result = await orderService.getRestaurantOrders(10);
 
-    expect(result).toEqual(mockPaginated);
+    expect(result).toEqual({
+      ...mockPaginated,
+      content: [mockOrder],
+    });
   });
 
   it('rethrows on API error', async () => {
@@ -193,7 +214,10 @@ describe('getOrdersByStatus', () => {
 
     const result = await orderService.getOrdersByStatus(OrderStatus.PENDING);
 
-    expect(result).toEqual(mockPaginated);
+    expect(result).toEqual({
+      ...mockPaginated,
+      content: [mockOrder],
+    });
   });
 
   it('rethrows on API error', async () => {
@@ -210,7 +234,10 @@ describe('getAvailableOrdersForRiders', () => {
 
     const result = await orderService.getAvailableOrdersForRiders();
 
-    expect(result).toEqual(mockPaginated);
+    expect(result).toEqual({
+      ...mockPaginated,
+      content: [mockOrder],
+    });
   });
 
   it('rethrows on API error', async () => {

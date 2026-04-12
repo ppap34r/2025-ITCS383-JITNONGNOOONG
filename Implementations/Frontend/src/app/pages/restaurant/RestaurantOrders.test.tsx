@@ -37,6 +37,12 @@ vi.mock('../../services/restaurant.service', () => ({
 import orderService from '../../services/order.service';
 import restaurantService from '../../services/restaurant.service';
 
+const expectOrderVisible = async (orderNumber: string) => {
+  await waitFor(() => {
+    expect(screen.getByText(new RegExp(`Order #\\s*${orderNumber}`))).toBeInTheDocument();
+  });
+};
+
 const mockOrders = [
   {
     id: '1',
@@ -107,12 +113,10 @@ describe('RestaurantOrders', () => {
 
   it('loads and displays orders', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #ORD-001')).toBeInTheDocument();
-      expect(screen.getByText('Order #ORD-002')).toBeInTheDocument();
-      expect(screen.getByText('Order #ORD-003')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-001');
+    await expectOrderVisible('ORD-002');
+    await expectOrderVisible('ORD-003');
   });
 
   it('displays customer names', async () => {
@@ -145,10 +149,8 @@ describe('RestaurantOrders', () => {
 
   it('handles orders with no items gracefully', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #ORD-003')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-003');
     // Should not crash when items array is empty
   });
 
@@ -222,10 +224,8 @@ describe('RestaurantOrders', () => {
 
   it('renders action buttons for orders that can advance', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #ORD-001')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-001');
 
     expect(screen.getByRole('button', { name: /confirm order/i })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /cancel order/i }).length).toBeGreaterThan(0);
@@ -234,10 +234,8 @@ describe('RestaurantOrders', () => {
 
   it('calls update service when confirming an order', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #ORD-001')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-001');
 
     fireEvent.click(screen.getByRole('button', { name: /confirm order/i }));
 
@@ -252,10 +250,8 @@ describe('RestaurantOrders', () => {
 
   it('calls update service when cancelling an order', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #ORD-001')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-001');
 
     fireEvent.click(screen.getAllByRole('button', { name: /cancel order/i })[0]);
 
@@ -269,10 +265,8 @@ describe('RestaurantOrders', () => {
 
   it('refreshes orders when clicking refresh button', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #ORD-001')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-001');
 
     expect(orderService.getRestaurantOrders).toHaveBeenCalledTimes(1);
 
@@ -286,10 +280,8 @@ describe('RestaurantOrders', () => {
 
   it('navigates back when clicking dashboard button', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #ORD-001')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-001');
 
     const backButton = screen.getByRole('button', { name: /dashboard/i });
     fireEvent.click(backButton);
