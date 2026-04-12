@@ -240,3 +240,44 @@ test('POST /otp returns 500 when the database query fails', async () => {
 
   cleanup();
 });
+
+test('POST /register returns 500 when user creation fails', async () => {
+  const { router, cleanup } = loadAuthRoute({
+    querySequence: [
+      [[]],
+      new Error('insert failed'),
+    ],
+  });
+  const handler = getRouteHandler(router, 'post', '/register');
+  const res = createMockResponse();
+
+  await handler({
+    body: {
+      name: 'Broken User',
+      email: 'broken@example.com',
+      password: 'secret123',
+    },
+  }, res);
+
+  assert.equal(res.statusCode, 500);
+  assert.equal(res.body.message, 'Server error');
+
+  cleanup();
+});
+
+test('POST /login returns 500 when the user lookup fails', async () => {
+  const { router, cleanup } = loadAuthRoute({
+    querySequence: [
+      new Error('lookup failed'),
+    ],
+  });
+  const handler = getRouteHandler(router, 'post', '/login');
+  const res = createMockResponse();
+
+  await handler({ body: { email: 'demo@example.com', password: 'customer123' } }, res);
+
+  assert.equal(res.statusCode, 500);
+  assert.equal(res.body.message, 'Server error');
+
+  cleanup();
+});

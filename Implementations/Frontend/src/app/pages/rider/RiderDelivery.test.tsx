@@ -113,6 +113,21 @@ describe('RiderDelivery', () => {
     );
   });
 
+  it('opens google maps for the restaurant pickup location', async () => {
+    render(<RiderDelivery />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /open restaurant in google maps/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /open restaurant in google maps/i }));
+
+    expect(window.open).toHaveBeenCalledWith(
+      expect.stringContaining(encodeURIComponent('Restaurant 2')),
+      '_blank',
+    );
+  });
+
   it('completes the delivery for picked up orders', async () => {
     render(<RiderDelivery />);
 
@@ -141,6 +156,37 @@ describe('RiderDelivery', () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Failed to load order details');
       expect(mockNavigate).toHaveBeenCalledWith('/rider/dashboard');
+    });
+  });
+
+  it('shows the delivered summary card instead of the completion button for delivered orders', async () => {
+    vi.mocked(orderService.getOrderById).mockResolvedValueOnce({
+      ...mockOrder,
+      status: OrderStatus.DELIVERED,
+    } as any);
+
+    render(<RiderDelivery />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/delivery completed!/i)).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('button', { name: /complete delivery/i })).not.toBeInTheDocument();
+  });
+
+  it('shows an error toast when completing the delivery fails', async () => {
+    vi.mocked(orderService.updateOrderStatus).mockRejectedValueOnce(new Error('update failed'));
+
+    render(<RiderDelivery />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /complete delivery/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /complete delivery/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to complete delivery. Please try again.');
     });
   });
 });

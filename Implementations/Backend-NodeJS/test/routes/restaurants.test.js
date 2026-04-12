@@ -40,6 +40,21 @@ test('GET /stats returns restaurant totals', async () => {
   cleanup();
 });
 
+test('GET /stats returns 500 when the stats query fails', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    new Error('stats down'),
+  ]);
+  const handler = getRouteHandler(router, 'get', '/stats');
+  const res = createMockResponse();
+
+  await handler({}, res);
+
+  assert.equal(res.statusCode, 500);
+  assert.equal(res.body.message, 'Server error');
+
+  cleanup();
+});
+
 test('GET / returns paginated restaurants', async () => {
   const { router, cleanup } = loadRestaurantsRoute([
     [[{ id: 1, name: 'Thai Place' }, { id: 2, name: 'Burger House' }]],
@@ -71,6 +86,20 @@ test('GET /top-rated returns top-rated restaurants', async () => {
   cleanup();
 });
 
+test('GET /top-rated returns 500 when the query fails', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    new Error('top rated unavailable'),
+  ]);
+  const handler = getRouteHandler(router, 'get', '/top-rated');
+  const res = createMockResponse();
+
+  await handler({}, res);
+
+  assert.equal(res.statusCode, 500);
+
+  cleanup();
+});
+
 test('GET /cuisine-types returns cuisine strings', async () => {
   const { router, cleanup } = loadRestaurantsRoute([
     [[{ cuisine_type: 'THAI' }, { cuisine_type: 'ITALIAN' }]],
@@ -81,6 +110,20 @@ test('GET /cuisine-types returns cuisine strings', async () => {
   await handler({}, res);
 
   assert.deepEqual(res.body.data, ['THAI', 'ITALIAN']);
+
+  cleanup();
+});
+
+test('GET /cuisine-types returns 500 when cuisine loading fails', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    new Error('cuisines unavailable'),
+  ]);
+  const handler = getRouteHandler(router, 'get', '/cuisine-types');
+  const res = createMockResponse();
+
+  await handler({}, res);
+
+  assert.equal(res.statusCode, 500);
 
   cleanup();
 });
@@ -123,6 +166,22 @@ test('GET /owner/:ownerId remaps mock owner ids and returns 404 when not found',
   cleanup();
 });
 
+test('GET /owner/:ownerId remaps owner id 1 to the mock restaurant owner and returns data', async () => {
+  const { router, dbMock, cleanup } = loadRestaurantsRoute([
+    [[{ id: 2, ownerId: 2, name: 'Owner Restaurant' }]],
+  ]);
+  const handler = getRouteHandler(router, 'get', '/owner/:ownerId');
+  const res = createMockResponse();
+
+  await handler({ params: { ownerId: '1' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.data[0].name, 'Owner Restaurant');
+  assert.equal(dbMock.query.calls[0][1][0], 2);
+
+  cleanup();
+});
+
 test('GET /:id returns a single restaurant', async () => {
   const { router, cleanup } = loadRestaurantsRoute([
     [[{ id: 9, name: 'One Restaurant' }]],
@@ -134,6 +193,21 @@ test('GET /:id returns a single restaurant', async () => {
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.data.id, 9);
+
+  cleanup();
+});
+
+test('GET /:id returns 404 when the restaurant does not exist', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    [[]],
+  ]);
+  const handler = getRouteHandler(router, 'get', '/:id');
+  const res = createMockResponse();
+
+  await handler({ params: { id: '404' } }, res);
+
+  assert.equal(res.statusCode, 404);
+  assert.equal(res.body.message, 'Restaurant not found');
 
   cleanup();
 });
@@ -168,6 +242,21 @@ test('GET /:id/menu/:itemId returns 404 when the menu item does not exist', asyn
   cleanup();
 });
 
+test('GET /:id/menu/:itemId returns a single menu item when it exists', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    [[{ id: 15, restaurant_id: 7, name: 'Pad See Ew' }]],
+  ]);
+  const handler = getRouteHandler(router, 'get', '/:id/menu/:itemId');
+  const res = createMockResponse();
+
+  await handler({ params: { id: '7', itemId: '15' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.data.name, 'Pad See Ew');
+
+  cleanup();
+});
+
 test('GET /:id/categories returns categories', async () => {
   const { router, cleanup } = loadRestaurantsRoute([
     [[{ id: 1, name: 'Main Dishes' }]],
@@ -179,6 +268,20 @@ test('GET /:id/categories returns categories', async () => {
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.data.length, 1);
+
+  cleanup();
+});
+
+test('GET /:id/categories returns 500 when category loading fails', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    new Error('categories unavailable'),
+  ]);
+  const handler = getRouteHandler(router, 'get', '/:id/categories');
+  const res = createMockResponse();
+
+  await handler({ params: { id: '5' } }, res);
+
+  assert.equal(res.statusCode, 500);
 
   cleanup();
 });
@@ -195,6 +298,35 @@ test('GET /:id/reviews sorts reviews using the requested sort order', async () =
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.data.length, 1);
   assert.match(dbMock.query.calls[0][0], /ORDER BY rr\.rating DESC, rr\.created_at DESC/);
+
+  cleanup();
+});
+
+test('GET /:id/reviews falls back to recent sorting for unknown sort values', async () => {
+  const { router, dbMock, cleanup } = loadRestaurantsRoute([
+    [[{ id: 1, customerName: 'A', rating: 5 }]],
+  ]);
+  const handler = getRouteHandler(router, 'get', '/:id/reviews');
+  const res = createMockResponse();
+
+  await handler({ params: { id: '5' }, query: { sort: 'mystery' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.match(dbMock.query.calls[0][0], /ORDER BY rr\.created_at DESC/);
+
+  cleanup();
+});
+
+test('GET /:id/reviews returns 500 when loading reviews fails', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    new Error('reviews unavailable'),
+  ]);
+  const handler = getRouteHandler(router, 'get', '/:id/reviews');
+  const res = createMockResponse();
+
+  await handler({ params: { id: '5' }, query: {} }, res);
+
+  assert.equal(res.statusCode, 500);
 
   cleanup();
 });
@@ -304,6 +436,25 @@ test('POST /:id/reviews creates a review and refreshes restaurant metrics', asyn
   cleanup();
 });
 
+test('POST /:id/reviews returns 500 when review creation fails unexpectedly', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    [[{ id: 1, restaurant_id: 5, customer_id: 2, status: 'DELIVERED' }]],
+    [[]],
+    new Error('insert review failed'),
+  ]);
+  const handler = getRouteHandler(router, 'post', '/:id/reviews');
+  const res = createMockResponse();
+
+  await handler({
+    params: { id: '5' },
+    body: { orderId: 1, customerId: 2, rating: 5, reviewText: 'Great' },
+  }, res);
+
+  assert.equal(res.statusCode, 500);
+
+  cleanup();
+});
+
 test('POST /:id/menu validates required menu fields', async () => {
   const { router, cleanup } = loadRestaurantsRoute();
   const handler = getRouteHandler(router, 'post', '/:id/menu');
@@ -357,6 +508,24 @@ test('POST /:id/menu creates a menu item', async () => {
   assert.equal(res.statusCode, 201);
   assert.equal(res.body.message, 'Menu item created');
   assert.equal(res.body.data.id, 21);
+
+  cleanup();
+});
+
+test('POST /:id/menu returns 500 when the insert fails', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    [[{ id: 9 }]],
+    new Error('menu insert failed'),
+  ]);
+  const handler = getRouteHandler(router, 'post', '/:id/menu');
+  const res = createMockResponse();
+
+  await handler({
+    params: { id: '3' },
+    body: { name: 'Broken Dish', price: 150, categoryId: 9 },
+  }, res);
+
+  assert.equal(res.statusCode, 500);
 
   cleanup();
 });
@@ -432,6 +601,35 @@ test('PUT /:id/menu/:itemId updates a menu item', async () => {
   cleanup();
 });
 
+test('PUT /:id/menu/:itemId returns 500 when the update fails', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    [[{
+      id: 50,
+      name: 'Old Dish',
+      description: 'Old',
+      price: 90,
+      category_id: 9,
+      image_url: null,
+      preparation_time: 15,
+      is_available: true,
+      display_order: 0,
+    }]],
+    [[{ id: 9 }]],
+    new Error('update failed'),
+  ]);
+  const handler = getRouteHandler(router, 'put', '/:id/menu/:itemId');
+  const res = createMockResponse();
+
+  await handler({
+    params: { id: '3', itemId: '50' },
+    body: { name: 'Updated Dish', price: 140, categoryId: 9 },
+  }, res);
+
+  assert.equal(res.statusCode, 500);
+
+  cleanup();
+});
+
 test('DELETE /:id/menu/:itemId returns 404 for a missing item', async () => {
   const { router, cleanup } = loadRestaurantsRoute([
     [[]],
@@ -459,6 +657,21 @@ test('DELETE /:id/menu/:itemId deletes an existing item', async () => {
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.message, 'Menu item deleted');
+
+  cleanup();
+});
+
+test('DELETE /:id/menu/:itemId returns 500 when deletion fails', async () => {
+  const { router, cleanup } = loadRestaurantsRoute([
+    [[{ id: 60, name: 'Delete Me' }]],
+    new Error('delete failed'),
+  ]);
+  const handler = getRouteHandler(router, 'delete', '/:id/menu/:itemId');
+  const res = createMockResponse();
+
+  await handler({ params: { id: '3', itemId: '60' } }, res);
+
+  assert.equal(res.statusCode, 500);
 
   cleanup();
 });
