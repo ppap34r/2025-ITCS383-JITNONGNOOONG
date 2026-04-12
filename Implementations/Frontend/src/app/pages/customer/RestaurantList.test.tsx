@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import RestaurantList from './RestaurantList';
 
@@ -30,6 +30,16 @@ vi.mock('../../components/figma/ImageWithFallback', () => ({
 
 import restaurantService from '../../services/restaurant.service';
 
+const flushRestaurantLoad = async () => {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(350);
+  });
+
+  await act(async () => {
+    await Promise.resolve();
+  });
+};
+
 describe('RestaurantList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,12 +68,10 @@ describe('RestaurantList', () => {
   it('loads restaurants and shows the search result count', async () => {
     render(<RestaurantList />);
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(350);
-    });
+    await flushRestaurantLoad();
 
-    expect(await screen.findByText('Thai Place')).toBeInTheDocument();
-    expect(await screen.findByText(/1 restaurants found/i)).toBeInTheDocument();
+    expect(screen.getByText('Thai Place')).toBeInTheDocument();
+    expect(screen.getByText(/1 restaurants found/i)).toBeInTheDocument();
   });
 
   it('falls back to a generic restaurant name when missing', async () => {
@@ -82,11 +90,9 @@ describe('RestaurantList', () => {
 
     render(<RestaurantList />);
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(350);
-    });
+    await flushRestaurantLoad();
 
-    expect(await screen.findByText('Restaurant')).toBeInTheDocument();
+    expect(screen.getByText('Restaurant')).toBeInTheDocument();
   });
 
   it('shows an empty state when the search returns no restaurants', async () => {
@@ -97,11 +103,9 @@ describe('RestaurantList', () => {
 
     render(<RestaurantList />);
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(350);
-    });
+    await flushRestaurantLoad();
 
-    expect(await screen.findByText(/no restaurants found matching your criteria/i)).toBeInTheDocument();
+    expect(screen.getByText(/no restaurants found matching your criteria/i)).toBeInTheDocument();
   });
 
   it('logs out and navigates back to login', async () => {
