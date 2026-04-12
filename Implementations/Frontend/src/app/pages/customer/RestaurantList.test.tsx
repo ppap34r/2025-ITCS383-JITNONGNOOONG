@@ -59,13 +59,11 @@ describe('RestaurantList', () => {
     render(<RestaurantList />);
 
     await act(async () => {
-      vi.advanceTimersByTime(300);
+      await vi.advanceTimersByTimeAsync(350);
     });
 
-    await waitFor(() => {
-      expect(screen.getByText('Thai Place')).toBeInTheDocument();
-      expect(screen.getByText(/1 restaurants found/i)).toBeInTheDocument();
-    });
+    expect(await screen.findByText('Thai Place')).toBeInTheDocument();
+    expect(await screen.findByText(/1 restaurants found/i)).toBeInTheDocument();
   });
 
   it('falls back to a generic restaurant name when missing', async () => {
@@ -85,12 +83,10 @@ describe('RestaurantList', () => {
     render(<RestaurantList />);
 
     await act(async () => {
-      vi.advanceTimersByTime(300);
+      await vi.advanceTimersByTimeAsync(350);
     });
 
-    await waitFor(() => {
-      expect(screen.getByText('Restaurant')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('Restaurant')).toBeInTheDocument();
   });
 
   it('shows an empty state when the search returns no restaurants', async () => {
@@ -102,12 +98,10 @@ describe('RestaurantList', () => {
     render(<RestaurantList />);
 
     await act(async () => {
-      vi.advanceTimersByTime(300);
+      await vi.advanceTimersByTimeAsync(350);
     });
 
-    await waitFor(() => {
-      expect(screen.getByText(/no restaurants found matching your criteria/i)).toBeInTheDocument();
-    });
+    expect(await screen.findByText(/no restaurants found matching your criteria/i)).toBeInTheDocument();
   });
 
   it('logs out and navigates back to login', async () => {

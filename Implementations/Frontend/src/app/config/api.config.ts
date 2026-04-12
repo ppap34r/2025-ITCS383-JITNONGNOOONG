@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
   RESTAURANTS: {
     BASE: `/api/${API_VERSION}/restaurants`,
     BY_ID: (id: string) => `/api/${API_VERSION}/restaurants/${id}`,
+    REVIEWS: (restaurantId: string) => `/api/${API_VERSION}/restaurants/${restaurantId}/reviews`,
     SEARCH: `/api/${API_VERSION}/restaurants/search`,
     BY_CUISINE: (cuisine: string) => `/api/${API_VERSION}/restaurants/cuisine/${cuisine}`,
     TOP_RATED: `/api/${API_VERSION}/restaurants/top-rated`,
