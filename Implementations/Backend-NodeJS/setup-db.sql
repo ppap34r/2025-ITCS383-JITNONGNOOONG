@@ -1,12 +1,3 @@
--- Use MySQL
-DROP DATABASE IF EXISTS mharruengsang;
-CREATE DATABASE mharruengsang;
-CREATE USER IF NOT EXISTS 'mharruengsang'@'localhost' IDENTIFIED BY 'mhar1234';
-GRANT ALL PRIVILEGES ON mharruengsang.* TO 'mharruengsang'@'localhost';
-FLUSH PRIVILEGES;
-
-USE mharruengsang;
-
 -- Drop tables if they exist (for simple reset)
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS order_items;
