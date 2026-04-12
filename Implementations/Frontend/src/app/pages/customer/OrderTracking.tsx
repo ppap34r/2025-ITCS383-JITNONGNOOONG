@@ -453,13 +453,13 @@ export default function OrderTracking() {
     }
 
     const orderKey = String(selectedOrder.id);
-    const interval = window.setInterval(() => {
+    const interval = globalThis.setInterval(() => {
       setDeliverySteps(current =>
         buildNextDeliverySteps(selectedOrder, orderKey, current, setStatusOverrides)
       );
     }, MOCK_UPDATE_MS);
 
-    return () => window.clearInterval(interval);
+    return () => globalThis.clearInterval(interval);
   }, [selectedOrder, selectedStatus]);
 
   const handleOrderReviewed = (updatedOrder: Order) => {

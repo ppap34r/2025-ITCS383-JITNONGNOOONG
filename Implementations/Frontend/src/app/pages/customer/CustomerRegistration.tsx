@@ -1,4 +1,4 @@
-import { useState, type ChangeEventHandler, type FormEventHandler } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -7,6 +7,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import authService from '../../services/auth.service';
+
+type InputChangeEvent = Parameters<NonNullable<ComponentProps<'input'>['onChange']>>[0];
+type FormSubmitEvent = Parameters<NonNullable<ComponentProps<'form'>['onSubmit']>>[0];
+
+function getRegistrationErrorMessage(error: unknown) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof error.response === 'object' &&
+    error.response !== null &&
+    'data' in error.response &&
+    typeof error.response.data === 'object' &&
+    error.response.data !== null &&
+    'message' in error.response.data &&
+    typeof error.response.data.message === 'string'
+  ) {
+    return error.response.data.message;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Registration failed';
+}
 
 export default function CustomerRegistration() {
   const navigate = useNavigate();
@@ -24,7 +50,7 @@ export default function CustomerRegistration() {
     cardCVV: ''
   });
 
-  const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+  const handleChange = (e: InputChangeEvent) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -54,28 +80,13 @@ export default function CustomerRegistration() {
       toast.success('Registration successful! Please sign in.');
       navigate('/login');
     } catch (error: unknown) {
-      const errorMessage =
-        typeof error === 'object' &&
-        error !== null &&
-        'response' in error &&
-        typeof error.response === 'object' &&
-        error.response !== null &&
-        'data' in error.response &&
-        typeof error.response.data === 'object' &&
-        error.response.data !== null &&
-        'message' in error.response.data &&
-        typeof error.response.data.message === 'string'
-          ? error.response.data.message
-          : error instanceof Error && error.message
-            ? error.message
-            : 'Registration failed';
-      toast.error(errorMessage);
+      toast.error(getRegistrationErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+  const handleSubmit = (e: FormSubmitEvent) => {
     e.preventDefault();
     void submitRegistration();
   };
