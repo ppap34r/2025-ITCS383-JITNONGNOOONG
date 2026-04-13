@@ -1,14 +1,42 @@
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import authService from '../../services/auth.service';
+
+type InputChangeEvent = Parameters<NonNullable<ComponentProps<'input'>['onChange']>>[0];
+type FormSubmitEvent = Parameters<NonNullable<ComponentProps<'form'>['onSubmit']>>[0];
+
+function getRegistrationErrorMessage(error: unknown) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof error.response === 'object' &&
+    error.response !== null &&
+    'data' in error.response &&
+    typeof error.response.data === 'object' &&
+    error.response.data !== null &&
+    'message' in error.response.data &&
+    typeof error.response.data.message === 'string'
+  ) {
+    return error.response.data.message;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Registration failed';
+}
 
 export default function CustomerRegistration() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -22,13 +50,11 @@ export default function CustomerRegistration() {
     cardCVV: ''
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: InputChangeEvent) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const submitRegistration = async () => {
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -39,8 +65,30 @@ export default function CustomerRegistration() {
       return;
     }
 
-    toast.success('Registration successful! Please login.');
-    navigate('/login');
+    setLoading(true);
+
+    try {
+      await authService.register({
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        phoneNumber: formData.mobile.trim(),
+        role: 'CUSTOMER',
+        address: formData.address.trim(),
+      });
+
+      toast.success('Registration successful! Please sign in.');
+      navigate('/login');
+    } catch (error: unknown) {
+      toast.error(getRegistrationErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = (e: FormSubmitEvent) => {
+    e.preventDefault();
+    void submitRegistration();
   };
 
   return (
@@ -199,8 +247,15 @@ export default function CustomerRegistration() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full">
-                Create Account
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  'Create Account'
+                )}
               </Button>
             </form>
           </CardContent>

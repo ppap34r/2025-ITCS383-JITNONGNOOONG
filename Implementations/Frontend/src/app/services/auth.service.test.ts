@@ -94,6 +94,12 @@ describe('verifyOtp', () => {
 
     await expect(verifyOtp({ email: 'unknown@example.com', otp: '123456' })).rejects.toThrow();
   });
+
+  it('rethrows error when mock OTP is not 6 digits long', async () => {
+    vi.mocked(apiClient.post).mockRejectedValueOnce(new Error('Network Error'));
+
+    await expect(verifyOtp({ email: 'admin@foodexpress.com', otp: '12345' })).rejects.toThrow();
+  });
 });
 
 // ========== register ==========
@@ -123,6 +129,29 @@ describe('register', () => {
     expect(localStorage.getItem('authToken')).toBe('tok');
     expect(localStorage.getItem('userId')).toBe('5');
   });
+
+  it('returns registration data without persisting auth when no token is provided', async () => {
+    const mockResp = {
+      success: true,
+      message: 'Registered',
+      data: {
+        message: 'Registered',
+        user: { id: 6, email: 'plain@example.com', name: 'Plain', role: 'CUSTOMER' },
+      },
+    };
+    vi.mocked(apiClient.post).mockResolvedValueOnce(fakeResponse(mockResp));
+
+    const result = await register({
+      name: 'Plain',
+      email: 'plain@example.com',
+      password: 'secret',
+      phoneNumber: '+66-12-345-6789',
+      role: 'CUSTOMER',
+    });
+
+    expect(result).toEqual(mockResp);
+    expect(localStorage.getItem('authToken')).toBeNull();
+  });
 });
 
 // ========== refreshToken ==========
@@ -140,6 +169,22 @@ describe('refreshToken', () => {
 
     expect(result).toEqual(mockResp);
     expect(localStorage.getItem('authToken')).toBe('newtoken');
+  });
+
+  it('does not overwrite authToken when refresh succeeds without a token', async () => {
+    localStorage.setItem('refreshToken', 'ref123');
+    localStorage.setItem('authToken', 'existing-token');
+    const mockResp = {
+      success: true,
+      message: 'Refreshed',
+      data: { message: 'ok', user: { id: 1, email: 'a@b.com', name: 'A', role: 'CUSTOMER' } },
+    };
+    vi.mocked(apiClient.post).mockResolvedValueOnce(fakeResponse(mockResp));
+
+    const result = await refreshToken();
+
+    expect(result).toEqual(mockResp);
+    expect(localStorage.getItem('authToken')).toBe('existing-token');
   });
 });
 

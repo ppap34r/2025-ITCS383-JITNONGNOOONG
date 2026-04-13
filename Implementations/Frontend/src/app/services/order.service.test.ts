@@ -26,8 +26,21 @@ const mockOrder = {
   status: 'PENDING',
   totalAmount: 350,
   createdAt: '2025-01-01T10:00:00Z',
+  updatedAt: undefined,
   deliveryAddress: '123 Test St',
+  deliveryFee: 0,
+  deliveryLatitude: undefined,
+  deliveryLongitude: undefined,
+  customerName: undefined,
+  customerPhoneNumber: undefined,
+  restaurantName: undefined,
+  riderId: undefined,
   orderItems: [],
+  specialInstructions: undefined,
+  restaurantReviewId: undefined,
+  restaurantRating: undefined,
+  restaurantReviewText: undefined,
+  restaurantReviewedAt: undefined,
 };
 
 const mockPaginated = {
@@ -45,7 +58,31 @@ beforeEach(() => {
 // ========== createOrder ==========
 describe('createOrder', () => {
   it('returns the created order', async () => {
-    vi.mocked(apiClient.post).mockResolvedValueOnce(fakeResponse(mockOrder));
+    vi.mocked(apiClient.post).mockResolvedValueOnce(
+      fakeResponse({
+        id: '1',
+        order_number: 'MR-0001',
+        customer_id: '100',
+        restaurant_id: '10',
+        status: 'PENDING',
+        total_amount: '350',
+        delivery_fee: '0',
+        delivery_address: '123 Test St',
+        created_at: '2025-01-01T10:00:00Z',
+        order_items: [
+          {
+            id: 1,
+            order_id: 1,
+            menu_item_id: 7,
+            menu_item_name: 'Pad Thai',
+            quantity: 2,
+            unit_price: 120,
+            total_price: 240,
+            special_instructions: 'No peanuts',
+          },
+        ],
+      } as any),
+    );
 
     const result = await orderService.createOrder({
       customerId: '100',
@@ -54,7 +91,23 @@ describe('createOrder', () => {
       orderItems: [],
     });
 
-    expect(result).toEqual(mockOrder);
+    expect(result).toEqual(
+      expect.objectContaining({
+        ...mockOrder,
+        orderItems: [
+          expect.objectContaining({
+            id: '1',
+            orderId: '1',
+            menuItemId: '7',
+            menuItemName: 'Pad Thai',
+            quantity: 2,
+            unitPrice: 120,
+            totalPrice: 240,
+            specialRequests: 'No peanuts',
+          }),
+        ],
+      }),
+    );
     expect(apiClient.post).toHaveBeenCalledOnce();
   });
 
@@ -70,18 +123,58 @@ describe('createOrder', () => {
 // ========== getOrderById ==========
 describe('getOrderById', () => {
   it('returns order by id', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce(fakeResponse(mockOrder));
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce(fakeResponse(mockOrder))
+      .mockResolvedValueOnce(
+        fakeResponse({ id: 100, name: 'John Doe', phoneNumber: '+66812345678' }),
+      );
 
     const result = await orderService.getOrderById(1);
 
-    expect(result).toEqual(mockOrder);
-    expect(apiClient.get).toHaveBeenCalledOnce();
+    expect(result).toEqual(
+      expect.objectContaining({
+        ...mockOrder,
+        customerName: 'John Doe',
+        customerPhoneNumber: '+66812345678',
+      }),
+    );
+    expect(apiClient.get).toHaveBeenCalledTimes(2);
   });
 
   it('rethrows on API error', async () => {
     vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('not found'));
 
     await expect(orderService.getOrderById(999)).rejects.toThrow();
+  });
+
+  it('returns the order unchanged when customer enrichment fails', async () => {
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce(fakeResponse(mockOrder))
+      .mockRejectedValueOnce(new Error('customer lookup failed'));
+
+    const result = await orderService.getOrderById(1);
+
+    expect(result).toEqual(mockOrder);
+  });
+
+  it('skips customer enrichment when the order already includes contact details', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce(
+      fakeResponse({
+        ...mockOrder,
+        customerName: 'Ready Customer',
+        customerPhoneNumber: '+66810000000',
+      } as any),
+    );
+
+    const result = await orderService.getOrderById(1);
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        customerName: 'Ready Customer',
+        customerPhoneNumber: '+66810000000',
+      }),
+    );
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -92,7 +185,7 @@ describe('getOrderByNumber', () => {
 
     const result = await orderService.getOrderByNumber('MR-0001');
 
-    expect(result).toEqual(mockOrder);
+    expect(result).toEqual(expect.objectContaining(mockOrder));
   });
 
   it('rethrows on API error', async () => {
@@ -109,7 +202,10 @@ describe('getCustomerOrders', () => {
 
     const result = await orderService.getCustomerOrders(100);
 
-    expect(result).toEqual(mockPaginated);
+    expect(result).toEqual({
+      ...mockPaginated,
+      content: [mockOrder],
+    });
     expect(apiClient.get).toHaveBeenCalledOnce();
   });
 
@@ -127,7 +223,10 @@ describe('getRestaurantOrders', () => {
 
     const result = await orderService.getRestaurantOrders(10);
 
-    expect(result).toEqual(mockPaginated);
+    expect(result).toEqual({
+      ...mockPaginated,
+      content: [mockOrder],
+    });
   });
 
   it('rethrows on API error', async () => {
@@ -185,7 +284,10 @@ describe('getOrdersByStatus', () => {
 
     const result = await orderService.getOrdersByStatus(OrderStatus.PENDING);
 
-    expect(result).toEqual(mockPaginated);
+    expect(result).toEqual({
+      ...mockPaginated,
+      content: [mockOrder],
+    });
   });
 
   it('rethrows on API error', async () => {
@@ -202,7 +304,10 @@ describe('getAvailableOrdersForRiders', () => {
 
     const result = await orderService.getAvailableOrdersForRiders();
 
-    expect(result).toEqual(mockPaginated);
+    expect(result).toEqual({
+      ...mockPaginated,
+      content: [mockOrder],
+    });
   });
 
   it('rethrows on API error', async () => {
@@ -230,6 +335,13 @@ describe('getRiderOrders', () => {
   });
 });
 
+describe('fallback mappings', () => {
+  it('returns fallback text and color for unknown statuses', () => {
+    expect(orderService.getStatusText('UNKNOWN' as OrderStatus)).toBe('UNKNOWN');
+    expect(orderService.getStatusColor('UNKNOWN' as OrderStatus)).toBe('text-gray-600');
+  });
+});
+
 // ========== getStatusText ==========
 describe('getStatusText', () => {
   it('returns human-readable text for PENDING', () => {
@@ -246,6 +358,11 @@ describe('getStatusText', () => {
 
   it('returns human-readable text for READY_FOR_PICKUP', () => {
     expect(orderService.getStatusText(OrderStatus.READY_FOR_PICKUP)).toBe('Ready for Pickup');
+  });
+
+  it('returns human-readable text for PICKED_UP and REFUNDED', () => {
+    expect(orderService.getStatusText(OrderStatus.PICKED_UP)).toBe('Picked Up');
+    expect(orderService.getStatusText(OrderStatus.REFUNDED)).toBe('Refunded');
   });
 });
 
@@ -265,5 +382,12 @@ describe('getStatusColor', () => {
 
   it('returns blue for CONFIRMED', () => {
     expect(orderService.getStatusColor(OrderStatus.CONFIRMED)).toBe('text-blue-600');
+  });
+
+  it('returns mapped colors for PREPARING, READY_FOR_PICKUP, PICKED_UP, and REFUNDED', () => {
+    expect(orderService.getStatusColor(OrderStatus.PREPARING)).toBe('text-orange-600');
+    expect(orderService.getStatusColor(OrderStatus.READY_FOR_PICKUP)).toBe('text-purple-600');
+    expect(orderService.getStatusColor(OrderStatus.PICKED_UP)).toBe('text-indigo-600');
+    expect(orderService.getStatusColor(OrderStatus.REFUNDED)).toBe('text-gray-600');
   });
 });

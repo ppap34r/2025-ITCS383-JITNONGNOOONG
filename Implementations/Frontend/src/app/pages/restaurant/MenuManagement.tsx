@@ -1,15 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ComponentProps } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import restaurantService from '../../services/restaurant.service';
 import { useApp } from '../../contexts/AppContext';
+
+type FormSubmitEvent = Parameters<NonNullable<ComponentProps<'form'>['onSubmit']>>[0];
+
+function getMenuOperationErrorMessage(error: unknown) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof error.response === 'object' &&
+    error.response !== null &&
+    'data' in error.response &&
+    typeof error.response.data === 'object' &&
+    error.response.data !== null &&
+    'message' in error.response.data &&
+    typeof error.response.data.message === 'string'
+  ) {
+    return error.response.data.message;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Operation failed';
+}
 
 export default function MenuManagement() {
   const navigate = useNavigate();
@@ -112,7 +137,7 @@ export default function MenuManagement() {
 
     try {
       await restaurantService.deleteMenuItem(restaurantId, itemId);
-      setItems(items.filter(item => item.id !== itemId));
+      setItems((currentItems) => currentItems.filter(item => String(item.id) !== String(itemId)));
       toast.success('Menu item deleted successfully');
     } catch (error) {
       console.error('Delete error:', error);
@@ -120,8 +145,7 @@ export default function MenuManagement() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitMenuItem = async () => {
     if (!restaurantId) {
       toast.error('Restaurant not loaded');
       return;
@@ -129,12 +153,21 @@ export default function MenuManagement() {
     setLoading(true);
     
     try {
+      const parsedCategoryId = Number.parseInt(formData.categoryId, 10);
+      const parsedPrice = Number.parseFloat(formData.price);
+      const parsedPreparationTime = Number.parseInt(formData.preparationTime, 10);
+
+      if (Number.isNaN(parsedCategoryId) || Number.isNaN(parsedPrice) || Number.isNaN(parsedPreparationTime)) {
+        toast.error('Please complete all menu item details');
+        return;
+      }
+
       const itemData = {
         name: formData.name,
         description: formData.description,
-        price: Number.parseFloat(formData.price),
-        categoryId: Number.parseInt(formData.categoryId),
-        preparationTime: Number.parseInt(formData.preparationTime),
+        price: parsedPrice,
+        categoryId: parsedCategoryId,
+        preparationTime: parsedPreparationTime,
         isAvailable: true
       };
 
@@ -145,23 +178,30 @@ export default function MenuManagement() {
           editingItem.id,
           itemData
         );
-        setItems(items.map(item => item.id === editingItem.id ? updated : item));
+        setItems((currentItems) =>
+          currentItems.map((item) => (String(item.id) === String(editingItem.id) ? updated : item))
+        );
         toast.success('Menu item updated successfully');
       } else {
         // Add new item
         const newItem = await restaurantService.addMenuItem(restaurantId, itemData);
-        setItems([...items, newItem]);
+        setItems((currentItems) => [...currentItems, newItem]);
         toast.success('Menu item added successfully');
       }
       
       setIsDialogOpen(false);
-    } catch (error: any) {
+      setEditingItem(null);
+    } catch (error: unknown) {
       console.error('Submit error:', error);
-      const errorMsg = error.response?.data?.message || error.message || 'Operation failed';
-      toast.error(errorMsg);
+      toast.error(getMenuOperationErrorMessage(error));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e: FormSubmitEvent) => {
+    e.preventDefault();
+    void submitMenuItem();
   };
 
   return (
@@ -202,7 +242,9 @@ export default function MenuManagement() {
         ) : (
           <>
             {categories.map(category => {
-              const categoryItems = items.filter(item => item.categoryId === category.id);
+              const categoryItems = items.filter(
+                item => String(item.categoryId) === String(category.id)
+              );
               
               return (
                 <div key={category.id} className="mb-8">
@@ -279,6 +321,9 @@ export default function MenuManagement() {
             <DialogTitle>
               {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
             </DialogTitle>
+            <DialogDescription>
+              {editingItem ? 'Update the selected menu item details.' : 'Add a new menu item to this restaurant.'}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

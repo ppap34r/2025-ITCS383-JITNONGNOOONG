@@ -37,6 +37,12 @@ vi.mock('../../services/restaurant.service', () => ({
 import orderService from '../../services/order.service';
 import restaurantService from '../../services/restaurant.service';
 
+const expectOrderVisible = async (orderNumber: string) => {
+  await waitFor(() => {
+    expect(screen.getByText(new RegExp(`Order #\\s*${orderNumber}`))).toBeInTheDocument();
+  });
+};
+
 const mockOrders = [
   {
     id: '1',
@@ -85,6 +91,31 @@ const mockOrders = [
   },
 ];
 
+const fallbackOrders = [
+  {
+    id: '4',
+    orderNumber: 'ORD-004',
+    customerId: '4',
+    restaurantId: '2',
+    status: 'DELIVERED',
+    totalAmount: 90,
+    deliveryFee: 20,
+    deliveryAddress: 'Fallback Street',
+    createdAt: 'invalid-date',
+    items: [{ id: '9', name: 'Rice', quantity: 1, price: 90 }],
+  },
+  {
+    id: '5',
+    orderNumber: 'ORD-005',
+    restaurantId: '2',
+    status: 'REFUNDED',
+    totalAmount: 50,
+    deliveryFee: 0,
+    deliveryAddress: 'Unknown Street',
+    items: [],
+  },
+];
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(restaurantService.getOwnerRestaurants).mockResolvedValue([{ id: '2', name: 'Test Restaurant' } as any]);
@@ -107,12 +138,10 @@ describe('RestaurantOrders', () => {
 
   it('loads and displays orders', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #1')).toBeInTheDocument();
-      expect(screen.getByText('Order #2')).toBeInTheDocument();
-      expect(screen.getByText('Order #3')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-001');
+    await expectOrderVisible('ORD-002');
+    await expectOrderVisible('ORD-003');
   });
 
   it('displays customer names', async () => {
@@ -145,10 +174,8 @@ describe('RestaurantOrders', () => {
 
   it('handles orders with no items gracefully', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #3')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-003');
     // Should not crash when items array is empty
   });
 
@@ -204,6 +231,43 @@ describe('RestaurantOrders', () => {
     });
   });
 
+  it('falls back to customer id and unavailable date text when order metadata is incomplete', async () => {
+    vi.mocked(orderService.getRestaurantOrders).mockResolvedValueOnce({
+      content: fallbackOrders,
+      page: 0,
+      size: 20,
+      totalElements: 2,
+      totalPages: 1,
+    } as any);
+
+    render(<RestaurantOrders />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText((_, element) => element?.textContent === 'Customer: Customer #4').length).toBeGreaterThan(0);
+      expect(screen.getAllByText((_, element) => element?.textContent === 'Customer: Customer unavailable').length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/date unavailable/i).length).toBeGreaterThan(0);
+    });
+  });
+
+  it('shows a status badge instead of action buttons for terminal statuses', async () => {
+    vi.mocked(orderService.getRestaurantOrders).mockResolvedValueOnce({
+      content: fallbackOrders,
+      page: 0,
+      size: 20,
+      totalElements: 2,
+      totalPages: 1,
+    } as any);
+
+    render(<RestaurantOrders />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('DELIVERED').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('REFUNDED').length).toBeGreaterThan(0);
+    });
+
+    expect(screen.queryByRole('button', { name: /mark as delivered/i })).not.toBeInTheDocument();
+  });
+
   it('shows empty state when no orders', async () => {
     vi.mocked(orderService.getRestaurantOrders).mockResolvedValueOnce({
       content: [],
@@ -220,35 +284,65 @@ describe('RestaurantOrders', () => {
     });
   });
 
-  it('renders order status dropdowns', async () => {
+  it('renders action buttons for orders that can advance', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #1')).toBeInTheDocument();
-    });
 
-    // Verify status dropdowns are rendered
-    const statusSelects = screen.getAllByRole('combobox');
-    expect(statusSelects.length).toBeGreaterThan(0);
+    await expectOrderVisible('ORD-001');
+
+    expect(screen.getByRole('button', { name: /confirm order/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /cancel order/i }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /start preparing/i })).toBeInTheDocument();
   });
 
-  it('calls update service when status changes', async () => {
+  it('calls update service when confirming an order', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #1')).toBeInTheDocument();
-    });
 
-    // Verify the component has loaded orders
-    expect(orderService.getRestaurantOrders).toHaveBeenCalled();
+    await expectOrderVisible('ORD-001');
+
+    fireEvent.click(screen.getByRole('button', { name: /confirm order/i }));
+
+    await waitFor(() => {
+      expect(orderService.updateOrderStatus).toHaveBeenCalledWith('1', {
+        newStatus: 'CONFIRMED',
+        updatedBy: 2,
+      });
+      expect(toast.success).toHaveBeenCalledWith('Order status updated');
+    });
+  });
+
+  it('calls update service when cancelling an order', async () => {
+    render(<RestaurantOrders />);
+
+    await expectOrderVisible('ORD-001');
+
+    fireEvent.click(screen.getAllByRole('button', { name: /cancel order/i })[0]);
+
+    await waitFor(() => {
+      expect(orderService.updateOrderStatus).toHaveBeenCalledWith('1', {
+        newStatus: 'CANCELLED',
+        updatedBy: 2,
+      });
+    });
+  });
+
+  it('shows an error toast when updating an order status fails', async () => {
+    vi.mocked(orderService.updateOrderStatus).mockRejectedValueOnce(new Error('Update failed'));
+
+    render(<RestaurantOrders />);
+
+    await expectOrderVisible('ORD-001');
+
+    fireEvent.click(screen.getByRole('button', { name: /confirm order/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to update order status');
+    });
   });
 
   it('refreshes orders when clicking refresh button', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #1')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-001');
 
     expect(orderService.getRestaurantOrders).toHaveBeenCalledTimes(1);
 
@@ -262,10 +356,8 @@ describe('RestaurantOrders', () => {
 
   it('navigates back when clicking dashboard button', async () => {
     render(<RestaurantOrders />);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Order #1')).toBeInTheDocument();
-    });
+
+    await expectOrderVisible('ORD-001');
 
     const backButton = screen.getByRole('button', { name: /dashboard/i });
     fireEvent.click(backButton);

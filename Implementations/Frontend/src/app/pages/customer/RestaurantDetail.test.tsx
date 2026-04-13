@@ -1,14 +1,17 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import RestaurantDetail from './RestaurantDetail';
 
+const addToCartMock = vi.fn();
+const mockNavigate = vi.fn();
+
 vi.mock('react-router', () => ({
   useParams: () => ({ id: '1' }),
-  useNavigate: () => vi.fn(),
+  useNavigate: () => mockNavigate,
 }));
 
 vi.mock('../../contexts/AppContext', () => ({
-  useApp: () => ({ addToCart: vi.fn(), cart: [] }),
+  useApp: () => ({ addToCart: addToCartMock, cart: [] }),
 }));
 
 vi.mock('../../components/figma/ImageWithFallback', () => ({
@@ -23,6 +26,7 @@ vi.mock('../../services/restaurant.service', () => ({
   default: {
     getRestaurantById: vi.fn(),
     getRestaurantMenu: vi.fn(),
+    getRestaurantReviews: vi.fn(),
   },
 }));
 
@@ -69,8 +73,26 @@ const mockMenu = [
 ];
 
 beforeEach(() => {
+  addToCartMock.mockReset();
+  mockNavigate.mockReset();
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: vi.fn(),
+  });
   vi.mocked(restaurantService.getRestaurantById).mockResolvedValue(mockRestaurant as any);
   vi.mocked(restaurantService.getRestaurantMenu).mockResolvedValue(mockMenu as any);
+  vi.mocked(restaurantService.getRestaurantReviews).mockResolvedValue([
+    {
+      id: 'RV1',
+      restaurantId: '1',
+      orderId: 'O1',
+      customerId: 'C1',
+      customerName: 'Jane',
+      rating: 5,
+      reviewText: 'Loved it',
+      createdAt: '2024-01-16T10:00:00',
+    },
+  ] as any);
 });
 
 describe('RestaurantDetail', () => {
@@ -103,6 +125,12 @@ describe('RestaurantDetail', () => {
       // minimumOrderAmount: 100 should appear somewhere (e.g. "Min order ฿100")
       expect(screen.getByText(/100/)).toBeInTheDocument();
     });
+
+    it('renders reviews and rating summary', () => {
+      expect(screen.getByText(/50 total reviews/i)).toBeInTheDocument();
+      expect(screen.getByText('Jane')).toBeInTheDocument();
+      expect(screen.getByText('Loved it')).toBeInTheDocument();
+    });
   });
 
   it('shows not-found state when the service call fails', async () => {
@@ -110,6 +138,103 @@ describe('RestaurantDetail', () => {
     render(<RestaurantDetail />);
     await waitFor(() => {
       expect(screen.getByText(/restaurant not found/i)).toBeInTheDocument();
+    });
+  });
+
+  it('shows the empty menu and review states when no available items or reviews exist', async () => {
+    vi.mocked(restaurantService.getRestaurantMenu).mockResolvedValueOnce([
+      {
+        id: 'M3',
+        name: 'Hidden Item',
+        price: 99,
+        description: 'Unavailable item',
+        isAvailable: false,
+        categoryName: 'Secret',
+      },
+    ] as any);
+    vi.mocked(restaurantService.getRestaurantReviews).mockResolvedValueOnce([]);
+
+    render(<RestaurantDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/no menu items available/i)).toBeInTheDocument();
+      expect(screen.getByText(/no reviews yet for this restaurant/i)).toBeInTheDocument();
+    });
+  });
+
+  it('falls back to N/A when rating and delivery time are missing', async () => {
+    vi.mocked(restaurantService.getRestaurantById).mockResolvedValueOnce({
+      ...mockRestaurant,
+      averageRating: undefined,
+      estimatedDeliveryTime: undefined,
+      minimumOrderAmount: 0,
+    } as any);
+
+    render(<RestaurantDetail />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('N/A').length).toBeGreaterThan(1);
+    });
+
+    expect(screen.queryByText(/minimum order:/i)).not.toBeInTheDocument();
+  });
+
+  it('opens the item dialog and adds a menu item to the cart', async () => {
+    render(<RestaurantDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Pad Thai')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Pad Thai'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/price: ฿120/i)).toBeInTheDocument();
+    });
+
+    const quantityButtons = screen.getAllByRole('button', { name: '' });
+    fireEvent.click(quantityButtons[1]);
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText(/total: ฿240/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /add to cart/i }));
+
+    expect(addToCartMock).toHaveBeenCalledWith({
+      id: 'M1',
+      name: 'Pad Thai',
+      price: 120,
+      quantity: 2,
+      restaurantId: '1',
+      restaurantName: 'Thai Palace',
+    });
+  });
+
+  it('navigates using the header buttons', async () => {
+    render(<RestaurantDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Thai Palace')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /back/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/customer/restaurants');
+
+    fireEvent.click(screen.getByRole('button', { name: /cart \(0\)/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/customer/checkout');
+  });
+
+  it('re-fetches reviews when the sort order changes', async () => {
+    render(<RestaurantDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Thai Palace')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('combobox'));
+    fireEvent.click(await screen.findByText(/highest rated/i));
+
+    await waitFor(() => {
+      expect(vi.mocked(restaurantService.getRestaurantReviews)).toHaveBeenLastCalledWith('1', 'highest');
     });
   });
 });

@@ -4,6 +4,8 @@
   "description": "Simplified Node.js + MySQL backend for MharRuengSang",
   "main": "src/index.js",
   "scripts": {
+    "test": "node --test test/**/*.test.js",
+    "test:coverage": "nyc --reporter=lcov --reporter=text node --test test/**/*.test.js",
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
   },
@@ -16,6 +18,7 @@
     "mysql2": "^3.9.7"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "nyc": "^17.1.0"
   }
 }
