@@ -1,12 +1,12 @@
 ## Quality Analysis
 
 ### Old SonarQube Quality Gate:
-![Old Quality Gate](<Image/SonarQube OldCode.png>)
+![Old Quality Gate](<Image/SonarQube_OldCode.png>)
 
 ### New SonarQube Quality Gate:
-![New Quality Gate](<Image/SonarQube NewCode1.png>)
-![New Quality Gate](<Image/SonarQube NewCode2.png>)
-![New Quality Gate](<Image/SonarQube NewCode3.png>)
+![New Quality Gate](<Image/SonarQube_NewCode1.png>)
+![New Quality Gate](<Image/SonarQube_NewCode2.png>)
+![New Quality Gate](<Image/SonarQube_NewCode3.png>)
 
 New feature implementations have successfully passed the **SonarQube Quality Gate**, significantly raising the project's baseline without introducing technical debt:
 
