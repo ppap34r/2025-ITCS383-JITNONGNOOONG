@@ -1,115 +1,110 @@
-# MharRuengSang — Food Delivery Platform
+# MharRuengSang Delivery Platform
+## Maintenance by JITNONGNOOONG
 
-A scalable food delivery platform (similar to Grab or Line Man) that connects customers, restaurants, and riders, managed by a central administration team.
+## Project Overview: MharRuengSang Food Delivery System
 
-Built with **Java Spring Boot** microservices (backend) and **React + Vite** (frontend).
+The goal of this project is to build a food delivery platform that connects customers, restaurants, riders, and administrators in one system. The current implementation is designed as a web-based platform with a React frontend, a Node.js Express backend, and a shared cloud-hosted MySQL database.
 
----
+### 1. User Roles
 
-## Service URLs
+**Customer**
+- Browse restaurants and menus
+- Place food orders
+- Make payments
+- Track order-related activity
 
-| Service | Port | Local URL |
-|---|---|---|
-| API Gateway | 8080 | http://localhost:8080 |
-| Order Service | 8081 | http://localhost:8081 |
-| Restaurant Service | 8082 | http://localhost:8082 |
-| Frontend (React) | 5173 | http://localhost:5173 |
-| PostgreSQL | 5432 | localhost:5432 |
+**Restaurant**
+- Manage restaurant information
+- Manage menu categories and menu items
+- Receive and handle customer orders
+- Review customer rating
 
----
+**Rider**
+- View rider-related delivery tasks
+- Access delivery information from the system
 
-## Requirements
+**Admin**
+- Monitor platform statistics
+- Access management-related system data
 
-| Tool | Version | Install |
-|---|---|---|
-| Java JDK | 21+ | https://adoptium.net |
-| Maven | 3.9+ | `brew install maven` |
-| Node.js | 18+ | https://nodejs.org |
-| npm | 9+ | bundled with Node.js |
-| PostgreSQL | 14+ | `brew install postgresql@14` |
+The current runnable implementation in this repository is:
 
-Verify your versions:
+- Frontend: React + Vite
+- Backend: Node.js + Express
+- Database: cloud-hosted MySQL
+
+There is also an older Spring Boot backend under `Implementations/Backend`, but the main local setup in this README follows `Implementations/Backend-NodeJS` because it matches the frontend's current API configuration.
+
+## Project Structure
+
+```text
+.
+├── README.md
+├── HANDOVER.md
+├── D2_CODE_QUALITY.md
+├── D3_CHANGE_REQUESTS.md
+├── D4_IMPACT_ANALYSIS.md
+├── D5_AI-USAGE.md
+├── Designs/
+└── Implementations/
+    ├── Frontend/          # React + Vite application
+    ├── Backend-NodeJS/    # Active Express + MySQL backend
+    └── Backend/           # Older Spring Boot implementation
+```
+
+## Local URLs
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Node.js API | http://localhost:8080 |
+| API root | http://localhost:8080/api/v1 |
+
+## Prerequisites
+
+- Node.js 18+
+- npm 9+
+
+Check your environment:
+
 ```bash
-java -version
-mvn -version
 node --version
-psql --version
+npm --version
 ```
 
----
+## Quick Start
 
-## Setup
-
-### 1. Database
-
-Start PostgreSQL and create the two databases:
+### 1. Run the backend
 
 ```bash
-# Start PostgreSQL (macOS)
-brew services start postgresql@14
-
-# Open psql and run these commands:
-psql -U postgres
+cd Implementations/Backend-NodeJS
+npm install
+npm run dev
 ```
 
-```sql
-CREATE DATABASE mhar_restaurants;
-CREATE DATABASE mhar_orders;
-CREATE USER mhar_user WITH PASSWORD 'mhar_password';
-GRANT ALL PRIVILEGES ON DATABASE mhar_restaurants TO mhar_user;
-GRANT ALL PRIVILEGES ON DATABASE mhar_orders TO mhar_user;
-\q
+The backend is already configured to use the shared cloud database, so you do not need to:
+
+- install local MySQL
+- create a local database
+- create or edit a `.env` file
+
+The API will start at `http://localhost:8080`.
+
+To confirm the backend and database are running successfully, open:
+
+```text
+http://localhost:8080/
 ```
 
-Default connection settings (used by `application.yml` in each service):
-- Host: `localhost:5432`
-- Databases: `mhar_restaurants`, `mhar_orders`
-- Username: `mhar_user` / Password: `mhar_password`
+You should see:
 
-To override, set environment variables before starting the services:
-```bash
-export DB_USERNAME=your_username
-export DB_PASSWORD=your_password
+```json
+{"message":"Welcome to MharRuengSang Node.js API"}
 ```
 
-### 2. Build Backend
+### 2. Run the frontend
 
-```bash
-cd Implementations/Backend
-mvn clean install -DskipTests
-```
-
-This compiles all three modules: `api-gateway`, `restaurant-service`, and `order-service`.
-
-### 3. Run Backend
-
-**Option A — All services in one command (recommended):**
-```bash
-cd Implementations/Backend
-./start-all.sh
-```
-
-**Option B — Each service in a separate terminal:**
-```bash
-# Terminal 1 – Restaurant Service → http://localhost:8082
-cd Implementations/Backend/restaurant-service
-mvn spring-boot:run
-
-# Terminal 2 – Order Service → http://localhost:8081
-cd Implementations/Backend/order-service
-mvn spring-boot:run
-
-# Terminal 3 – API Gateway → http://localhost:8080
-cd Implementations/Backend/api-gateway
-mvn spring-boot:run
-```
-
-To stop all services started with `start-all.sh`:
-```bash
-./stop-all.sh
-```
-
-### 4. Run Frontend
+Open a second terminal:
 
 ```bash
 cd Implementations/Frontend
@@ -117,173 +112,144 @@ npm install
 npm run dev
 ```
 
-Frontend is available at **http://localhost:5173**
+The frontend will start at `http://localhost:5173`.
 
----
+## Backend Configuration
 
-## Run Tests
+- The backend uses the cloud database settings provided by the project.
+- No local database setup is required for a normal run.
+- No `.env` file is required unless you explicitly want to override the default configuration.
 
-**Backend:**
+## Frontend API Configuration
+
+The frontend already points to `http://localhost:8080` by default for local development, so no extra change is required in the normal setup.
+
+## Authentication Flow
+
+The current backend uses a mock OTP flow:
+
+1. Log in with email and password.
+2. Submit any 6-digit OTP code.
+3. The backend returns a token and logs the user in.
+
+## Demo Accounts
+
+These demo accounts are intended for the shared backend data used by the project.
+
+| Role | Email | Password |
+|---|---|---|
+| Customer | `customer@foodexpress.com` | `customer123` |
+| Customer | `sarah@foodexpress.com` | `sarah123` |
+| Restaurant | `restaurant@foodexpress.com` | `restaurant123` |
+| Restaurant | `sushi@foodexpress.com` | `sushi123` |
+| Rider | `rider@foodexpress.com` | `rider123` |
+| Admin | `admin@foodexpress.com` | `admin123` |
+
+Example OTP: `123456`
+
+## Useful API Checks
+
 ```bash
-cd Implementations/Backend
-mvn test
+curl http://localhost:8080/
+curl http://localhost:8080/api/v1/restaurants
+curl http://localhost:8080/api/v1/orders/admin/stats
 ```
 
-**Frontend:**
+## Running Tests
+
+Backend:
+
+```bash
+cd Implementations/Backend-NodeJS
+npm test
+```
+
+Backend coverage:
+
+```bash
+cd Implementations/Backend-NodeJS
+npm run test:coverage
+```
+
+Frontend:
+
 ```bash
 cd Implementations/Frontend
-npx vitest run
+npm test
 ```
 
----
-
-## Example Usage
-
-### Demo Accounts
-
-Log in with any of the following demo accounts, then enter any 6-digit OTP (e.g. `123456`):
-
-| Name | Email | Password | Role | Dashboard |
-|---|---|---|---|---|
-| John Doe | `customer@foodexpress.com` | `Customer123!` | Customer | Customer Dashboard |
-| Sarah Wilson | `sarah@foodexpress.com` | `Sarah123!` | Customer | Customer Dashboard |
-| Bangkok Street Food | `restaurant@foodexpress.com` | `Restaurant123!` | Restaurant | Restaurant Dashboard |
-| Sushi Master | `sushi@foodexpress.com` | `Sushi123!` | Restaurant | Restaurant Dashboard |
-| Mike Chen | `rider@foodexpress.com` | `Rider123!` | Rider | Rider Dashboard |
-| Admin User | `admin@foodexpress.com` | `Admin123!` | Admin | Admin Dashboard |
-
-Open **http://localhost:5173**, click **Login**, enter a demo email and password, then enter `123456` as the OTP.
-
-### API Examples
+Frontend coverage:
 
 ```bash
-# Health checks
-curl http://localhost:8082/actuator/health   # Restaurant Service
-curl http://localhost:8081/actuator/health   # Order Service
-curl http://localhost:8080/actuator/health   # API Gateway
-
-# List all restaurants (through API Gateway)
-curl http://localhost:8080/api/restaurants
-
-# List all restaurants (direct)
-curl http://localhost:8082/api/restaurants
-
-# Get a restaurant by ID
-curl http://localhost:8082/api/restaurants/1
-
-# Create a restaurant
-curl -X POST http://localhost:8082/api/restaurants \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test Restaurant",
-    "cuisineType": "THAI",
-    "phoneNumber": "+66-2-123-4567",
-    "email": "test@example.com",
-    "address": "123 Test St",
-    "latitude": 13.7563,
-    "longitude": 100.5018,
-    "deliveryFee": 25.00,
-    "minimumOrderAmount": 100.00,
-    "openingTime": "09:00",
-    "closingTime": "22:00",
-    "estimatedDeliveryTime": 30,
-    "ownerId": 1
-  }'
-
-# Create an order
-curl -X POST http://localhost:8081/orders \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customerId": 1,
-    "restaurantId": 1,
-    "deliveryAddress": "456 Customer St",
-    "deliveryLatitude": 13.7400,
-    "deliveryLongitude": 100.5100,
-    "orderItems": [
-      {
-        "menuItemId": 1,
-        "menuItemName": "Pad Thai",
-        "quantity": 2,
-        "unitPrice": 120.00
-      }
-    ]
-  }'
-
-# Get admin statistics
-curl http://localhost:8081/orders/admin/stats
-curl http://localhost:8082/api/restaurants/stats
+cd Implementations/Frontend
+npm run test:coverage
 ```
 
----
+## Main Features
 
-## Architecture
+- User registration and login
+- Mock OTP verification
+- Restaurant browsing and menu management
+- Order creation and order tracking
+- Rider and customer endpoints
+- Payment-related API routes
+- Admin statistics endpoints
 
-```
-Browser / React App (http://localhost:5173)
-        │
-        ▼ HTTP
-  API Gateway (http://localhost:8080)
-        │
-   ┌────┴────┐
-   ▼         ▼
-Restaurant  Order
-Service     Service
-(:8082)     (:8081)
-   │         │
-   ▼         ▼
-PostgreSQL  PostgreSQL
-mhar_       mhar_
-restaurants orders
-```
+## Extra Documentation
 
----
+- `HANDOVER.md`
+- `Implementations/QUICK_START.md`
+- `Implementations/INTEGRATION_GUIDE.md`
+- `Implementations/AUTHENTICATION_README.md`
+- `Implementations/ARCHITECTURE.md`
+- `Implementations/backend-architecture.md`
 
 ## Troubleshooting
 
-**Port already in use:**
-```bash
-lsof -i :8080   # find the process
-kill -9 <PID>
+If the backend cannot connect to the database:
+
+- Check that you are using the project’s default backend configuration.
+- If you created a custom `.env`, verify it is not overriding the cloud database settings.
+- Confirm your network can reach the hosted database service.
+
+If the frontend cannot reach the backend:
+
+- Make sure the backend is running on port `8080`.
+- Make sure the frontend is using `http://localhost:8080` as `VITE_API_BASE_URL`.
+
+If demo login fails:
+
+- Confirm the shared database is reachable.
+- Check whether the shared demo data has been changed.
+
+
+### 2. System Workflow
+
+The system workflow in the current codebase is:
+
+1. The backend starts on `http://localhost:8080`.
+2. The backend connects to the shared cloud MySQL database.
+3. The frontend starts on `http://localhost:5173`.
+4. The frontend sends API requests to the backend using `/api/v1/...` endpoints.
+5. The backend processes authentication, restaurant, order, payment, rider, and customer requests.
+6. The backend reads from and writes to the shared database.
+7. The frontend displays returned data based on the logged-in user's role.
+
+To verify that the backend is running correctly, open:
+
+```text
+http://localhost:8080/
 ```
 
-**PostgreSQL not running:**
-```bash
-brew services start postgresql@14
-psql -U postgres -c "SELECT version();"
-```
+You should see:
 
-**Build fails:**
-```bash
-# Ensure JAVA_HOME points to JDK 21+
-export JAVA_HOME=$(/usr/libexec/java_home)
-java -version
-```
-
-**View service logs:**
-```bash
-tail -f Implementations/Backend/logs/restaurant-service.log
-tail -f Implementations/Backend/logs/order-service.log
-tail -f Implementations/Backend/logs/api-gateway.log
+```json
+{"message":"Welcome to MharRuengSang Node.js API"}
 ```
 
 ---
 
-## Project Overview: Food Delivery System
-
-The goal is to build a scalable food delivery platform (similar to Grab or Line Man) that connects customers, restaurants, and riders, managed by a central administration team.
-
----
-
-## 1. User Roles (Actors)
-
-- **Customer:** Browses, orders food, pays, and rates the service.
-- **Restaurant:** Manages menus, prices, and prepares orders.
-- **Rider (Delivery Man):** Accepts deliveries and transports food to customers.
-- **System Administrator:** Monitors revenue, manages user accounts, and creates system-wide promotions.
-
----
-
-## 2. Functional Requirements
+## Functional Requirements
 
 ### **A. Customer Journey**
 
@@ -294,7 +260,7 @@ The goal is to build a scalable food delivery platform (similar to Grab or Line 
     - Distance from the customer's location.
 - **Ordering:** Select food items and checkout.
 - **Payment:** Support for Credit Cards and Bank Transfer (QR Code/PromptPay).
-- **Rating:** Ability to rate riders based on politeness and speed after delivery.
+
 
 ### **B. Restaurant Management**
 
@@ -316,498 +282,101 @@ The goal is to build a scalable food delivery platform (similar to Grab or Line 
 
 ---
 
-## 3. Technical & Non-Functional Requirements
+## New Features Request
 
-- **Platform Availability:**
-    - **Web:** Accessible via all computers and operating systems.
-    - **Mobile:** Native or cross-platform apps for both **iOS and Android**.
-- **Tech Stack:** Must be developed using **Java technology** only (due to legacy system compatibility).
-- **Scalability:** The system must support **10 million concurrent users**.
-- **Integrations:**
-    - Third-party OTP service for login.
-    - Payment Gateways (Credit Card processing and Mobile Banking).
+## 1. Restaurant Rating System
 
-## 4. Quick Start Guide - Get Running in 5 Minutes
+### **FR1.1: Submit Rating and Review**
 
-### Prerequisites
-- Java 17+ installed: `java -version`
-- PostgreSQL running: `psql --version`
-- Node.js installed: `node --version`
+- **Description:** The system shall allow logged-in Customers to submit a star rating (1 to 5 stars) and an optional text review for a restaurant.
+- **Condition:** A customer can only rate a restaurant after an order from that restaurant has been marked as "Completed" or "Delivered".
 
-### Step 1: Database Setup (1 min)
-```bash
-# Create databases for microservices
-psql -U postgres
+### **FR1.2: Display Aggregate Ratings**
 
-CREATE DATABASE mhar_restaurants;
-CREATE DATABASE mhar_orders;
-CREATE USER mhar_user WITH PASSWORD 'mhar_password';
-GRANT ALL PRIVILEGES ON DATABAOptional
+- **Description:** The system shall display the average star rating and the total number of reviews on the restaurant's card (in search/listing views) and on the restaurant's detailed profile page.
 
-Default configuration works out of the box with:
-- PostgreSQL: `localhost:5432`
-- Databases: `mhar_restaurants`, `mhar_orders`
-- User: `mhar_user` / Password: `mhar_password`
+### **FR1.3: Real-time Rating Calculation**
 
-**To customize**, edit `Backend/*/src/main/resources/application.yml`:
+- **Description:** The system shall automatically recalculate and update the restaurant's average rating whenever a new review is submitted.
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/mhar_restaurants
-    username: ${DB_USERNAME:mhar_user}
-    password: ${DB_PASSWORD:mhar_password}
-```
+### **FR1.4: Review Visibility & Sorting**
 
-**Set environment variables:**
-```bash
-export DB_USERNAME=your_username
-export DB_PASSWORD=your_password
-```
-    url: jdbc:mysql://localhost:3306/mharruengsang?useSSL=false&serverTimezone=UTC
-    username: root
-    password: YOUR_MYSQL_ROOT_PASSWORD  # ← Replace with your MySQL root password
-```
+- **Description:** The system shall display a list of customer reviews on the restaurant's profile page, sortable by "Most Recent", "Highest Rated", and "Lowest Rated".
 
-**Where to find your MySQL password:**
-- If you installed MySQL recently, check your installation notes
-- Default MySQL root password (if you didn't set one): leave blank or use `root`
-- If using XAMPP: password is usually blank (leave empty)
-- If using WAMP/MAMP: check your setup documentation
+### **FR1.5: Restaurant Owner Dashboard View**
 
-## Step 3: Run Backend (2 min)
-
-### Option A: Quick Start (One Command) ⭐ Recommended
-```bash
-cd Implementations/Backend
-./start-all.sh
-```
-
-This starts all microservices in one terminal:
-- 🌐 API Gateway: `http://localhost:8080`
-- 🍽️ Restaurant Service: `http://localhost:8082`
-- 📦 Order Service: `http://localhost:8081`
-
-**To stop all services:**
-```bash
-./stop-all.sh
-```
-
-### Option B: Manual Start (Separate Terminals)
-```bash
-# Terminal 1 - Restaurant Service
-cd Implementations/Backend/restaurant-service
-mvn spring-boot:run
-
-# Terminal 2 - Order Service  
-cd Implementations/Backend/order-service
-mvn spring-boot:run
-
-# Terminal 3 - API Gateway
-cd Implementations/Backend/api-gateway
-mvn spFrontend/src/app/services/api.config.ts` or similar:
-
-```javascript
-const api = axios.create({
-  baseURL: 'http://localhost:8080/api',  // ← API Gateway URL
-## Step 4: Update Frontend API (30 sec)
-Edit `Implementation/src/api.js`:
-
-```javascript
-const api = axios.create({
-  baseURL: 'http://localhost:8080/api',  // ← Change this line
-  timeout: 5000,s/Frontend
-npm install
-npm run dev
-```
-
-✅ Frontend running at: `http://localhost:5173`
+- **Description:** The system shall provide Restaurant Owners with a dedicated dashboard section to view their overall rating metrics and read individual customer reviews.
 
 ---
 
-### Using the Application
+## 2. Driver Tracking System with Map - Mock Data
 
-### Mock Authentication (Email OTP)
+### **FR2.1: Live Map UI Initialization**
 
-**Currently uses email-based OTP** (free method) instead of SMS. When you log in:
+- **Description:** The system shall display an interactive map interface on the Customer's "Order Tracking" screen once an order status changes to "Picked Up" or "On the Way".
 
-1. **Login Step**: Enter credentials → OTP sent to email message appears
-2. **OTP Step**: Enter any 6-digit code (e.g., `123456`)
-3. **Success**: Redirected to your dashboard
+### **FR2.2: Mock GPS Coordinate Generation**
 
-**Demo Accounts** (use any password):
-- `customer@foodexpress.com` → Customer Dashboard
-- `restaurant@foodexpress.com` → Restaurant Dashboard  
-- `rider@foodexpress.com` → Rider Dashboard
-- `admin@foodexpress.com` → Admin Dashboard
+- **Description:** The system shall generate mock GPS coordinates (latitude and longitude) that represent the Rider's current location relative to the restaurant and the delivery address.
 
-**Note**: Auth service (port 8083) is not yet implemented, so frontend uses mock authentication fallback.
+### **FR2.3: Rider Movement Simulation**
 
----
+- **Description:** The system shall periodically (e.g., every 5 seconds) update the mock GPS coordinates to simulate the Rider moving along a path toward the delivery destination.
 
-### Test It Out!
+### **FR2.4: Display Markers & Route**
 
-### 1. Test Restaurant Service
-```bash
-curl http://localhost:8082/api/restaurants
-```
+- **Description:** The map shall display distinct visual markers for the Restaurant location, the Customer's delivery location, and a moving icon (e.g., a motorcycle) representing the Rider's mock location.
 
-### 2. Test Through API Gateway
-```bash
-curl http://localhost:8080/api/restaurants
-```
+### **FR2.5: Estimated Time of Arrival (ETA)**
 
-### 3. Check Service Health
-```bash
-# Restaurant Service
-curl http://localhost:8082/actuator/health
+- **Description:** The system shall calculate and display a simulated Estimated Time of Arrival (ETA) that dynamically updates based on the remaining distance of the mock coordinates to the destination.
 
-# Order Service
-curl http://localhost:8081/actuator/health
+### **FR2.6: Arrival and Status Transition**
 
-# AAPI Endpoints
-
-### Restaurant Service (Port 8082)
-```bash
-# Get all restaurants
-curl http://localhost:8082/api/restaurants
-
-# Get restaurant by ID
-curl http://localhost:8082/api/restaurants/1
-
-# Create restaurant
-curl -X POST http://localhost:8082/api/restaurants \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test Restaurant",
-    "cuisineType": "THAI",
-    "phoneNumber": "+66-2-123-4567",
-    "email": "test@example.com",
-    "address": "123 Test St",
-    "latitude": 13.7563,
-    "longitude": 100.5018,
-    "deliveryFee": 25.00,
-    "minimumOrderAmount": 100.00,
-    "openingTime": "09:00",
-    "closingTime": "22:00",
-    "estimatedDeliveryTime": 30,
-    "ownerId": 1
-  }'
-```/8081/8082 already in use"
-```bash
-# Check what's using the port
-lsof -i :8080
-
-# Kill and restart
-./stop-all.sh
-./start-all.sh
-```
-
-### "Connection refused: PostgreSQL"
-```bash
-# Start PostgreSQL
-brew services start postgresql  # macOS
-sudo service postgresql start   # Linux
-
-# Check if running
-psql -U postgres -c "SELECT version();"
-```
-
-### "Unable to find a suitable main class"
-```bash
-# Don't run from parent directory
-# Always use ./start-all.sh or go to individual service directory
-cd restaurant-service
-mvn spring-boot:run
-```
-
-### Services fail to start
-```bash
-# Check logs
-tail -f logs/restaurant-service.log
-tail -f logs/order-service.log
-tail -f logs/api-gateway.log
-
-# Rebuild if needed
-mvn clean install
-```
-### Test Rating
-```bash
-curl -X POST "http://localhost:8080/api/ratings?orderId=1&customerId=1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "riderId": 1,
-    "politenessScore": 5,
-    "speedScore": 4,
-    "review": "Great service!"
-  }'
-```
+- **Description:** When the mock coordinates reach a defined radius of the delivery location, the system shall prompt the mock UI to transition the order status to "Arrived" or "Delivered".
 
 ---
 
-### Common Issues
+### Workflow Overview
 
-### "Port 8080 already in use"
-```bash
-# Stop other Java process
-lsof -i :8080
-kill -9 <PID>
-```
+**A. Customer Flow**
+- Register and log in with email and password
+- Complete login using the current mock OTP flow
+- View restaurant listings and available menu items
+- Place orders through the frontend
+- Use payment-related features supported by the backend
 
-### "Connection refused: localhost:3306"
-```bash
-# Start MySQL
-mysql.server start  # macOS
-# OR
-mysqld  # Windows
-```
+**B. Restaurant Flow**
+- Manage restaurant records
+- Add and organize menu categories
+- Add, update, and manage menu items
+- View incoming order data from customers
 
-### CORS error in browser
-- Ensure backend is running on port 8080
-- Check `CorsConfig.java` includes your frontend URL
+**C. Rider Flow**
+- Access rider endpoints from the backend
+- View available delivery-related information
+- Support delivery operations inside the platform workflow
 
----
+**D. Admin Flow**
+- View admin statistics endpoints
+- Access order and restaurant summary data
+- Use platform data for management and monitoring
 
-## Project Files Overview
+### 4. Authentication and Data Flow
 
-```
-2025-ITCS383-MharRuengSang/
-├── Backend/                    # ← Java Spring Boot backend (NEW!)
-│   ├── pom.xml                 # Maven dependencies
-│   ├── src/main/java/          # All backend code
-│   ├── src/main/resources/
-│   │   └── application.yml     # 🔧 Configure here
-│   ├── README.md               # Full documentation
-│   ├── PAYMENT_FLOW.md         # Payment architecture
-│   └── API_REFERENCE.md        # All API endpoints
-│
-├── Implementation/             # Your React frontend
-│   ├── src/
-│   │   ├── api.js              # 🔧 Update baseURL here
-│   │   └── pages/
-│   │       └── customer/
-│   │           └── Checkout.jsx # 🔧 Payment implementation here
-│   └── package.json
-│
-├── INTEGRATION_GUIDE.md        # Frontend-backend integration
-└── BACKEND_SUMMARY.md          # What's been built
-```
+The current authentication flow is implemented as:
 
---- :5173)
-         ↓ HTTP
-    API GATEWAY (:8080)
-    ┌─────┴─────┐
-    ↓           ↓
-RESTAURANT   ORDER
-SERVICE      SERVICE
-(:8082)      (:8081)
-    ↓           ↓
-PostgreSQL  PostgreSQL
-(mhar_restaurants) (mhar_orders)
-```
+1. The user enters email and password.
+2. The backend validates the login request.
+3. The system asks for OTP verification.
+4. Any 6-digit OTP is accepted in the current mock implementation.
+5. The backend returns an authentication token.
+6. The frontend uses that token for protected API requests.
 
-**Microservices Architecture:**
-- Each service has its own database
-- API Gateway routes requests to services
-- Services communicate via REST APIs
-- Redis caching (optional, disabled in tests)T /api/riders/{id}/accept-order/{oid} - Accept delivery
-POST /api/riders/{id}/confirm-delivery/{oid} - Complete
-```
-**Restaurant Service Database** (`mhar_restaurants`):
-- `restaurants` - Restaurant information
-- `menu_categories` - Menu category organization
-- `menu_items` - Restaurant menu items
+All major data flows through the same pattern:
 
-**Order Service Database** (`mhar_orders`):
-- `orders` - Order records
-- `order_items` - Individual items in orders
-- `order_status_history` - Order status tracking
-### Ratings
-```
-POST /api/ratings       - Submit rating
-GET  /PostgreSQL installed and running
-- [ ] Databases created: `mhar_restaurants`, `mhar_orders`
-- [ ] Backend built: `mvn clean install` (from Backend directory)
-- [ ] All services started: `./start-all.sh`
-- [ ] Restaurant Service running: `http://localhost:8082`
-- [ ] Order Service running: `http://localhost:8081`
-- [ ] API Gateway running: `http://localhost:8080`
-- [ ] Frontend configured to use API Gateway
-- [ ] Frontend running: `http://localhost:5173`
-- [ ] Test endpoints work: `curl http://localhost:8080/api/restaurants`
-- [ ] ✅ Complete!
-
----
-
-## Viewing Logs
-
-All service logs are saved to `Backend/logs/`:
-
-```bash
-# View all logs simultaneously
-tail -f logs/*.log
-
-# View specific service
-tail -f logs/restaurant-service.log
-tail -f logs/order-service.log
-tail -f logs/api-gateway.log
-
-# Search for errors
-grep -i error logs/*.log
-```
-
-1. ✅ Read `PAYMENT_FLOW.md` to understand architecture
-2. ✅ Check `INTEGRATION_GUIDE.md` for detailed integration
-3. ✅ Review `API_REFERENCE.md` for all endpoints
-4. ✅ Run sample tests above
-5. ✅ Connect with Thanaporn (Order Service) for event coordination
-6. ✅ Connect with Natkrittar (Promotion Service) for discount validation
-
----
-
-## Architecture Diagram
-
-```
-FRONTEND (React/Vite)
-    ↓ HTTP
-┌────────────────────────────────┐
-│  Backend (Spring Boot)         │
-│  ├─ Payment Service            │
-│  ├─ Rider Service              │
-│  ├─ Promotion Service          │
-│  ├─ Rating Service             │
-│  └─ Geolocation Service        │
-└────────────────┬───────────────┘
-                 ├─ Stripe API (Payment)
-                 ├─ MySQL Database
-                 ├─ Kafka Events (Order, Rider)
-                 └─ QR Code Generator
-```
-
----
-
-## Database Schema (Auto-created)
-
-Tables automatically created:
-- `users` - Customers, riders, restaurants
-- `orders` - Order records
-- `payments` - Payment transactions
-- `promotions` - Discount codes
-- `rider_locations` - GPS tracking
-- `rider_ratings` - Delivery ratings
-
----
-
-## 10-Minute Checklist
-
-- [ ] Database created: `mharruengsang`
-- [ ] Backend configured: `application.yml`
-- [ ] Backend running: `http://localhost:8080/api`
-- [ ] Frontend API updated: `http://localhost:8080/api`
-- [ ] Frontend running: `http://localhost:5173`
-- [ ] Test payment endpoint works
-- [ ] See payment processed successfully
-- [ ]✅ Complete!
-
----
-
-## Still Have Questions?
-
-1. **How does payment work?** → `PAYMENT_FLOW.md`
-2. **What APIs exist?** → `API_REFERENCE.md`
-3. **How do I integrate frontend?** → `INTEGRATION_GUIDE.md`
-4. **Full documentation?** → `Backend/README.md`
-
----
-
-## Support Contacts
-
-- **Backend Issues:** Check logs in Spring Boot terminal
-- **Database Issues:** `mysql -u root -p` and verify tables created
-- **Frontend Issues:** Check browser console (F12)
-- **Payment provider:** Check API keys in `application.yml`
-
----
-
-**You're all set! Happy coding! 🚀**
-
-Next: Read INTEGRATION_GUIDE.md for detailed integration steps.
-
----
-
-# Node.js Version setup
-
-I've discussed with Aj. Aun (Chaiyong) about the project phase 2 that Spring Boot may be hard to implementation because we haven't study about it much.
- 
-So, I've created the new backend with migrate to Node.JS, which will implement more easier than Spring Boot. Please pull the new commit from our repository and do with these instructions:
- 
-## 🚀 Quick Start Guide
- 
-### 1. Database Setup (MySQL)
-First, ensure you have a local MySQL server running (e.g., via XAMPP, MAMP, or native MySQL install).
- 
-1. Open your terminal or MySQL command line.
-2. Import the schema and demo data using the provided SQL script
-```bash
-mysql -u root -p < Implementations/Backend-NodeJS/setup-db.sql
-```
-This will create a database named `mharruengsang`, build all the necessary tables (Users, Restaurants, Menus, Orders), and populate them with demo data and bcrypt-hashed passwords.
- 
-### 2. Backend Setup (Node.js)
-1. Open a new terminal window and navigate to the new Node.js backend directory:
-```bash
-cd Implementations/Backend-NodeJS
-```
-2. Install the necessary Node dependencies:
-```bash
-npm install
-```
-3. Create/verify your `.env` file inside the `Backend-NodeJS` folder. It should look like this:
-```bash
-PORT=8080
-DB_HOST=localhost
-DB_USER=mharruengsang
-DB_PASSWORD=mhar1234
-DB_NAME=mharruengsang
-JWT_SECRET=supersecretkey_mharruengsang
-```
-   *(We've pre-configured `DB_USER` and `DB_PASSWORD` to use the dedicated user created by the initial setup script).*
-   
-4. Start the development server:
-```bash
-npm run dev
-```
-   The backend will now be running on `http://localhost:8080`.
- 
-### 3. Frontend Setup (React)
-1. Open another terminal window and navigate to the frontend directory:
-```bash
-cd Implementations/Frontend
-```
-2. Install the frontend dependencies:
-```bash
-npm install
-```
-3. Start the Vite development server:
-```bash
-npm run dev
-```
-   The frontend will now be accessible at `http://localhost:5173`.
- 
-This should solve the conflict problem and make sure your group will work in this project more flawless krub.
-
----
-# Food Delivery Mobile App
-Link: https://github.com/minxc9/JITNONGNOOONG_Mobile-App.git
-
-
-
----
-# Team Member
-1. 6688005 - Thanaporn Aritidtayamontol
-2. 6688064 - Natkrittar Maswongwiwat
-3. 6688091 - Pundharee Puckdinukul
-4. 6688110 - Kornkanok Soongswang
-5. 6688175 - Panatthaphong Yoodee
-6. 6688249 - Sahatsawat Nitjaphant
-
+- Frontend sends request
+- Backend validates and processes request
+- Backend queries or updates the cloud database
+- Backend returns JSON response
+- Frontend renders the result to the user
