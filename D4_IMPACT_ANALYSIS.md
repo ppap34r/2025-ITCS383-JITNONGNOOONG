@@ -310,7 +310,6 @@ C5 -.-> T5
 C6 -.-> T6
 C7 -.-> T7
 C8 -.-> T8
-
 ```
 
 ## **Directed Graph of SLOs**
