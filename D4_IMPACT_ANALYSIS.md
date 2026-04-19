@@ -2966,7 +2966,7 @@ SLO3 --> SLO5
 
 ## **Analysis**
 **Which change requests are easy to apply and why?**
-- CR #2: Cuisine type search fix, just fix the varible but also had some impact at frontend.
+- CR #2: Cuisine type search fix. Fixing a varible name impacts at frontend, but easy to track (as demonstrate in the graph).
 
 **Which change requests are difficult to apply and why?**
 - CR #7: Add Restaurant Rating Feature, even though the feature sounds easy, the change requires touching modules from every layers of the legacy code, which make a litte change imapcts to surrounding modules.
